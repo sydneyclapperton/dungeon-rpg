@@ -4,6 +4,7 @@ import time
 
 """#Object Creation
 
+##Character
 """
 
 #Object Creation
@@ -145,6 +146,17 @@ class Character:
           except ValueError:
               print("Please enter a number.")
 
+
+  def use_potion(self):
+    if self.healing_potions == 0:
+        return False
+    else:
+      self.hp = min(self.max_hp, self.hp+10)
+      self.healing_potions -=1
+      return True
+
+"""##Monster"""
+
 #Monster
 class Mob:
   def __init__(self, name, hp, min_damage, max_damage, xp_reward, mob_type):
@@ -157,6 +169,8 @@ class Mob:
   def attack(self):
     return random.randint(self.min_damage, self.max_damage)
 
+"""##Items"""
+
 #Equipment
 class Item:
   def __init__(self, name, slot, hp_bonus=0, min_dmg_bonus=0, max_dmg_bonus=0,value=5):
@@ -166,6 +180,78 @@ class Item:
     self.min_dmg_bonus = min_dmg_bonus
     self.max_dmg_bonus = max_dmg_bonus
     self.value = value
+
+"""#Combat Functions"""
+
+def player_attack(player, mob):
+    damage = player.attack()
+    mob.hp -= damage
+    return damage
+
+
+def monster_attack(player, mob):
+    damage = mob.attack()
+    player.hp -= damage
+    return damage
+
+def handle_victory(player, mob):
+    print(f"{player.name} defeated the {mob.name}!")
+    player.xp += mob.xp_reward
+    print(f"{player.name} gained {mob.xp_reward} XP!")
+    print(f"{player.name} now has a total of {player.xp} XP.")
+    player.level_up()
+
+#Refactored Combat Function
+def Combat(player, mob):
+    while player.hp > 0 and mob.hp > 0:
+        choice = input(
+            "Choose an action:\n"
+            "1. Attack\n"
+            "2. Use Healing Potion\n"
+            "3. Run\n"
+            "4. Inspect\n")
+        if choice == '1':
+            player_damage = player_attack(player, mob)
+            print(f"{player.name} hits {mob.name} for {player_damage} damage!")
+            print(f"{mob.name} HP: {max(0, mob.hp)}\n")
+            time.sleep(.4)
+            if mob.hp <= 0:
+                break
+            mob_damage = monster_attack(player, mob)
+            print(f"{mob.name} hits {player.name} for {mob_damage} damage!")
+            print(f"{player.name} HP: {max(0, player.hp)}\n")
+            time.sleep(.4)
+
+        elif choice == '2':
+            if player.use_potion():
+                print(f"{player.name} heals for 10 HP!")
+                print(f"{player.name} HP: {player.hp}")
+                print(f"Potions remaining: {player.healing_potions}\n")
+            else:
+                print("You have no potions!")
+            mob_damage = monster_attack(player, mob)
+            print(f"{mob.name} hits {player.name} for {mob_damage} damage!")
+            print(f"{player.name} HP: {max(0, player.hp)}\n")
+            time.sleep(.4)
+
+        elif choice == '3':
+            print("You ran away and escaped the dungeon.")
+            return "Ran_away"
+
+        elif choice == '4':
+            print(
+                f"Monster: {mob.name}\n"
+                f"Monster HP: {mob.hp}\n"
+                f"Monster Type: {mob.mob_type}")
+
+        else:
+            print("Please input a valid option.")
+
+    if player.hp > 0:
+        handle_victory(player, mob)
+        return "Victory"
+    print(f"{player.name} was defeated!")
+    return "Defeat"
 
 """#Game Functions"""
 
@@ -182,61 +268,6 @@ def Start_Game():
   player = Character(player_name, player_class)
   print(f"{player.name} is a brand new {player.player_class} looking to enter the world of adventuring. Good luck!")
   Dungeon_creation(1)
-
-def Combat(player, mob):
-  while player.hp > 0 and mob.hp >0:
-    choice = input("Choose an action:\n1.Attack\n2.Use Healing Potion\n3.Run\n4.Inspect\n")
-    if choice == '1':
-      player_damage = player.attack()
-      mob.hp -= player_damage
-      print(f"{player.name} hits {mob.name} for {player_damage} damage!")
-      print(f"{mob.name} HP: {max(0, mob.hp)}\n")
-      time.sleep(.4)
-
-      if mob.hp <= 0:
-        break
-      mob_damage = mob.attack()
-      player.hp -= mob_damage
-      print(f"{mob.name} hits {player.name} for {mob_damage} damage")
-      print(f"{player.name} HP: {max(0,player.hp)}\n")
-      time.sleep(.4)
-
-    elif choice =='2':
-      if player.healing_potions == 0:
-        print("You have no potions!")
-      else:
-        player.hp = min(player.max_hp, player.hp+10)
-        player.healing_potions -=1
-        print(f"{player.name} heals for 10 HP!")
-        print(f"{player.name} HP: {player.hp}")
-        print(f"Potions remaining: {player.healing_potions}\n")
-
-      mob_damage = mob.attack()
-      player.hp -= mob_damage
-      print(f"{mob.name} hits {player.name} for {mob_damage} damage")
-      print(f"{player.name} HP: {max(0,player.hp)}\n")
-      time.sleep(.4)
-
-    elif choice == "3":
-      print("You ran away and escaped the dungeon.")
-      return "Ran_away"
-
-    elif choice == "4":
-      print(f"Monster: {mob.name}\nMonster HP: {mob.hp}\nMonster Type: {mob.mob_type}")
-
-    else:
-      print("Please input a valid option.")
-
-  if player.hp > 0:
-    print(f"{player.name} defeated the {mob.name}!")
-    player.xp += mob.xp_reward
-    print(f"{player.name} gained {mob.xp_reward} XP!")
-    print(f"{player.name} now has a total of {player.xp} XP.")
-    player.level_up()
-    return "Victory"
-  else:
-    print(f"{player.name} was defeated!")
-    return "Defeat"
 
 def Dungeon_creation(difficulty):
   print(f"{player.name}, a {player.player_class}, enters the dungeon.")
@@ -310,8 +341,9 @@ def Continue():
 
     elif choice == '3':
       while True:
+        print("\n=== Character Menu ===")
         print("1. Stats\n2. Equipment\n3. Inventory\n4. Equip from Inventory\n5. Return")
-        menu_choice = input('What would you like to do?')
+        menu_choice = input('\nWhat would you like to do?' )
         if menu_choice == '1':
           player.view_stats()
         elif menu_choice == '2':
