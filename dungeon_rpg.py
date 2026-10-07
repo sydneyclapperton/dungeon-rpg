@@ -7,6 +7,42 @@ import time
 ##Character
 """
 
+#Player_Class Creation
+CLASS_DATA = {
+  "Warrior" : {"hp": 20,
+                "min_damage":2,
+                "max_damage":4,
+                "potions":0,
+                "ability": "Power Strike",
+                "cooldown": 4,
+                "ability_desc": "Doubles attack damage",
+                "ability_effect": lambda x : x * 2},
+  "Mage" : {"hp": -10,
+              "min_damage":3,
+              "max_damage":5,
+              "potions":3,
+              "ability": "Fireball",
+              "cooldown": 3,
+              "ability_desc": "Adds 15 damage to attack",
+              "ability_effect": lambda x : x + 15},
+  "Rogue" : {"hp": 0,
+              "min_damage":0,
+              "max_damage":7,
+              "potions":1,
+              "ability": "Knife Throw",
+              "cooldown": 3,
+              "ability_desc": "Doubles attack damage and adds 5",
+              "ability_effect": lambda x : x*2 + 5},
+  "Paladin" : {"hp": 30,
+            "min_damage":1,
+            "max_damage":2,
+            "potions":2,
+            "ability": "Smite",
+            "cooldown": 2,
+            "ability_desc": "Adds 10 damage to attack",
+            "ability_effect": lambda x : x + 10}
+}
+
 #Object Creation
 #Character
 class Character:
@@ -28,6 +64,18 @@ class Character:
       "Boots": None
       }
     self.gold = 0
+    class_bonus = CLASS_DATA.get(player_class, {})
+    self.max_hp += class_bonus.get("hp", 0)
+    self.min_damage += class_bonus.get("min_damage", 0)
+    self.max_damage += class_bonus.get("max_damage", 0)
+    self.healing_potions += class_bonus.get("potions", 0)
+    self.hp = self.max_hp
+    self.special_ability = class_bonus.get("ability")
+    self.ability_effect = class_bonus.get("ability_effect")
+    self.ability_desc = class_bonus.get("ability_desc")
+    self.ability_cooldown = class_bonus.get("cooldown", 0)
+    self.special_cooldown = 0
+
   def attack(self):
     return random.randint(self.min_damage, self.max_damage)
 
@@ -84,7 +132,9 @@ class Character:
         print(f"{slot}: None")
 
   def view_stats(self):
-    print(f"Name: {self.name}\nClass: {self.player_class}\nLevel: {self.level}\n"
+    print(f"Name: {self.name}\nClass: {self.player_class}\n"
+          f"Ability: {self.special_ability}\nLevel: {self.level}\n"
+          f"Effect: {self.ability_desc}\n"
           f"Current XP: {self.xp}/{self.level*5 - 2}\n\n"
           f"HP: {self.hp}/{self.max_hp}\n"
           f"Damage: {self.min_damage}-{self.max_damage}\n\n"
@@ -155,6 +205,18 @@ class Character:
       self.healing_potions -=1
       return True
 
+  def use_special(self, mob):
+    if self.special_cooldown > 0:
+        return None
+    damage = self.ability_effect(self.attack())
+    mob.hp -= damage
+    self.special_cooldown = self.ability_cooldown
+    return damage
+
+  def reduce_cooldown(self):
+    if self.special_cooldown > 0:
+      self.special_cooldown -= 1
+
 """##Monster"""
 
 #Monster
@@ -201,15 +263,18 @@ def handle_victory(player, mob):
     print(f"{player.name} now has a total of {player.xp} XP.")
     player.level_up()
 
-#Refactored Combat Function
+#Combat Function
 def Combat(player, mob):
     while player.hp > 0 and mob.hp > 0:
         choice = input(
-            "Choose an action:\n"
-            "1. Attack\n"
-            "2. Use Healing Potion\n"
-            "3. Run\n"
-            "4. Inspect\n")
+          f"Choose an action:\n"
+          f"1. Attack\n"
+          f"2. Use Healing Potion\n"
+          f"3. {player.special_ability}"
+          f" (CD: {player.special_cooldown})\n"
+          f"4. Run\n"
+          f"5. Inspect\n"
+          )
         if choice == '1':
             player_damage = player_attack(player, mob)
             print(f"{player.name} hits {mob.name} for {player_damage} damage!")
@@ -220,6 +285,7 @@ def Combat(player, mob):
             mob_damage = monster_attack(player, mob)
             print(f"{mob.name} hits {player.name} for {mob_damage} damage!")
             print(f"{player.name} HP: {max(0, player.hp)}\n")
+            player.reduce_cooldown()
             time.sleep(.4)
 
         elif choice == '2':
@@ -232,13 +298,30 @@ def Combat(player, mob):
             mob_damage = monster_attack(player, mob)
             print(f"{mob.name} hits {player.name} for {mob_damage} damage!")
             print(f"{player.name} HP: {max(0, player.hp)}\n")
+            player.reduce_cooldown()
             time.sleep(.4)
 
         elif choice == '3':
+          damage = player.use_special(mob)
+          if damage is None:
+              print(
+                  f"{player.special_ability} is on cooldown for "
+                  f"{player.special_cooldown} more turns.")
+              continue
+          print(f"{player.name} used {player.special_ability}!")
+          print(f"It dealt {damage} damage!")
+          if mob.hp <= 0:
+            break
+          mob_damage = monster_attack(player, mob)
+          print(f"{mob.name} hits {player.name} for {mob_damage} damage!")
+          print(f"{player.name} HP: {max(0, player.hp)}\n")
+          time.sleep(.4)
+
+        elif choice == '4':
             print("You ran away and escaped the dungeon.")
             return "Ran_away"
 
-        elif choice == '4':
+        elif choice == '5':
             print(
                 f"Monster: {mob.name}\n"
                 f"Monster HP: {mob.hp}\n"
@@ -264,7 +347,34 @@ def Start_Game():
     if 1 <= len(player_name) <= 15:
       break
     print("Names must be between 1 and 15 characters.")
-  player_class = input("What is your character's class?\n").strip().title()
+  # Class Selection
+  while True:
+      print("\n=== Choose Your Class ===")
+
+      class_names = list(CLASS_DATA.keys())
+
+      for i, (class_name, stats) in enumerate(CLASS_DATA.items(), start=1):
+          print(f"\n{i}. {class_name}")
+          print(f"   HP Modifier: {stats['hp']:+}")
+          print(f"   Min Damage Modifier: {stats['min_damage']:+}")
+          print(f"   Max Damage Modifier: {stats['max_damage']:+}")
+          print(f"   Starting Potions: +{stats['potions']}")
+          print(f"   Special Ability: {stats['ability']}")
+          print(f"   Effect: {stats['ability_desc']}")
+
+      choice = input("\nEnter your choice: ")
+
+      try:
+          choice = int(choice)
+
+          if 1 <= choice <= len(class_names):
+              player_class = class_names[choice - 1]
+              break
+
+          print("Please choose a valid class.")
+
+      except ValueError:
+          print("Please enter a number.")
   player = Character(player_name, player_class)
   print(f"{player.name} is a brand new {player.player_class} looking to enter the world of adventuring. Good luck!")
   Dungeon_creation(1)
@@ -311,16 +421,19 @@ def Dungeon_creation(difficulty):
     boss = Spawn_Boss(difficulty)
     print(f"You found the boss! It's a {boss.name}! Prepare to fight.")
     time.sleep(1)
-    result = Combat(player,boss)
+    result = Combat(player, boss)
     time.sleep(.5)
-    if player.hp > 0:
-      gold_drop(player,difficulty)
-      Handle_Loot(player, boss)
-      Handle_Loot(player, boss)
-      print(f"You cleared the dungeon on difficulty {difficulty}. You are currently level {player.level}. Keep going?")
-      Continue()
+    if result == "Victory":
+        gold_drop(player,difficulty)
+        Handle_Loot(player, boss)
+        Handle_Loot(player, boss)
+        print(f"You cleared the dungeon on difficulty {difficulty}.")
+        Continue()
+    elif result == "Ran_away":
+        print("You fled from the boss.")
+        print("Game over.")
     else:
-      print("Game over!")
+        print("Game over.")
 
 """#Town Functions"""
 
@@ -455,9 +568,13 @@ def Spawn_Mob(difficulty):      #name, hp, min_damage, max_damage, xp_reward, mo
   monsters = [
     ("Goblin", 10, 1, 5, 1,"Humanoid"),
     ("Wolf", 15, 2, 6, 1, "Beast"),
-    ("Bandit", 20, 3, 5, 2, "Humanoid"),
-    ("Rat", 10, 2, 5, 1, "Beast"),
-    ("Imp", 10, 3, 4, 1, "Demon")
+    ("Bandit Fighter", 20, 3, 5, 2, "Humanoid"),
+    ("Rat", 10, 1, 4, 1, "Beast"),
+    ("Imp", 10, 3, 4, 1, "Demon"),
+    ("Bandit Archer", 15, 5, 6, 2, "Human"),
+    ("Giant Spider", 12, 2, 5, 1, "Beast"),
+    ("Boar", 20, 1, 5, 2, "Beast"),
+    ("Lesser Drake", 18, 2, 6, 2, "Dragonkin")
   ]
   monster = random.choice(monsters)
   return Mob(monster[0],
@@ -469,9 +586,11 @@ def Spawn_Mob(difficulty):      #name, hp, min_damage, max_damage, xp_reward, mo
 
 def Spawn_Boss(difficulty):     #name, hp, min_damage, max_damage, xp_reward, mob_type
   bosses = [
-    ("Bandit Leader", 45, 3, 7, 4,"Humanoid"),
+    ("Bandit Leader", 45, 4, 7, 4,"Humanoid"),
     ("Alpha Wolf", 35, 4, 8, 4, "Beast"),
-    ("Goblin Leader", 35, 2, 8, 4, "Humanoid")
+    ("Goblin Leader", 35, 2, 8, 4, "Humanoid"),
+    ("Troll", 55, 2, 6, 4, "Humanoid"),
+    ("Baby Dragon", 60, 3, 10, 5, "Dragonkin")
   ]
   boss = random.choice(bosses)
   return Mob(boss[0],
