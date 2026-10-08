@@ -114,11 +114,10 @@ class Character:
       self.max_damage += 3
       self.max_hp += 10
       self.hp = self.max_hp
-      print(f"{self.name} leveled up! They are now level {self.level} and have been fully healed!\n")
       self.xp -= xp_needed
+      return True
     else:
-      print(f"{self.name} needs {xp_needed - self.xp} more XP to reach level {self.level + 1} \n")
-    time.sleep(1)
+      return False
 
   def view_equipped(self):
     print("Equipment: \n")
@@ -132,7 +131,7 @@ class Character:
         print(f"{slot}: None")
 
   def view_stats(self):
-    print(f"Name: {self.name}\nClass: {self.player_class}\n"
+    return (f"Name: {self.name}\nClass: {self.player_class}\n"
           f"Ability: {self.special_ability}\nLevel: {self.level}\n"
           f"Effect: {self.ability_desc}\n"
           f"Current XP: {self.xp}/{self.level*5 - 2}\n\n"
@@ -639,5 +638,6 @@ def gold_drop(player,difficulty):
         f"You now have {player.gold} gold.")
 
 """#Game Testing"""
+if __name__ == "__main__":
+    Start_Game()
 
-Start_Game()
