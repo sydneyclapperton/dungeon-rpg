@@ -212,7 +212,7 @@ elif st.session_state.screen == "dungeon":
         with col1:
             if st.button("Attack"):
                 st.write(type(player))
-                st.write(player.attack)
+                st.write(player.attack())
                 #damage, crit = player.attack()
                 player.reduce_cooldown()
                 mob.hp -= damage
