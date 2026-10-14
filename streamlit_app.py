@@ -211,7 +211,8 @@ elif st.session_state.screen == "dungeon":
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Attack"):
-                damage, crit = player.attack()
+                st.write(player.attack())
+                #damage, crit = player.attack()
                 player.reduce_cooldown()
                 mob.hp -= damage
                 if crit:
