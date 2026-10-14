@@ -51,10 +51,10 @@ class Character:
     self.player_class = player_class
     self.level = 1
     self.xp = 0
-    self.max_hp = 50
+    self.max_hp = 40
     self.hp = self.max_hp
     self.min_damage = 1
-    self.max_damage = 10
+    self.max_damage = 6
     self.healing_potions = 1
     self.inventory = []
     self.equipment = {
@@ -90,7 +90,6 @@ class Character:
     self.min_damage += item.min_dmg_bonus
     self.max_damage += item.max_dmg_bonus
     self.hp = min(self.hp, self.max_hp)
-    print(f"{self.name} equipped {item.name}!")
 
   def view_inventory(self):
     print(f"You have {self.healing_potions} potions and {self.gold} gold.")
@@ -200,9 +199,10 @@ class Character:
     if self.healing_potions == 0:
         return False
     else:
-      self.hp = min(self.max_hp, self.hp+10)
+      heal_amount = int(self.max_hp*.3)
+      self.hp = min(self.max_hp, self.hp+heal_amount)
       self.healing_potions -=1
-      return True
+      return heal_amount
 
   def use_special(self, mob):
     if self.special_cooldown > 0:
@@ -220,16 +220,32 @@ class Character:
 
 #Monster
 class Mob:
-  def __init__(self, name, hp, min_damage, max_damage, xp_reward, mob_type):
+  def __init__(self, name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0):
     self.name = name
     self.mob_type = mob_type
     self.hp = hp
     self.min_damage = min_damage
     self.max_damage = max_damage
     self.xp_reward = xp_reward
+    self.ability_name = ability_name
+    self.ability_effect = ability_effect
+    self.cooldown = 0
+    self.ability_cooldown = cooldown
   def attack(self):
     return random.randint(self.min_damage, self.max_damage)
 
+  def reduce_cooldown(self):
+    if self.cooldown > 0:
+        self.cooldown -= 1
+
+  def use_ability(self,target):
+    if self.ability_effect is None:
+      return None
+    elif self.cooldown > 0:
+      return None
+    else:
+      self.cooldown = self.ability_cooldown
+      return self.ability_effect(target)
 """##Items"""
 
 #Equipment
@@ -255,12 +271,27 @@ def monster_attack(player, mob):
     player.hp -= damage
     return damage
 
-def handle_victory(player, mob):
-    print(f"{player.name} defeated the {mob.name}!")
+def handle_victory(player, mob, difficulty):
     player.xp += mob.xp_reward
-    print(f"{player.name} gained {mob.xp_reward} XP!")
-    print(f"{player.name} now has a total of {player.xp} XP.")
-    player.level_up()
+    leveled_up = player.level_up()
+    gold_found = random.randint(1+(difficulty-1), 3*difficulty)
+    # Boss bonus
+    if difficulty % 5 == 0:
+        gold_found *= 2
+        loot = Loot_Drop("boss")
+    else:
+      loot = Loot_Drop("basic")
+    if loot:
+        if loot == "Healing potion":
+            player.healing_potions += 1
+        else:
+            player.inventory.append(loot)
+    player.gold += gold_found
+    return {
+        "xp_gained": mob.xp_reward,
+        "gold_found": gold_found,
+        "loot": loot,
+        "leveled_up": leveled_up}
 
 #Combat Function
 def Combat(player, mob):
@@ -563,7 +594,7 @@ def shop(player):
 
 """#Monster and Loot Tables"""
 
-def Spawn_Mob(difficulty):      #name, hp, min_damage, max_damage, xp_reward, mob_type
+def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
   monsters = [
     ("Goblin", 10, 1, 5, 1,"Humanoid"),
     ("Wolf", 15, 2, 6, 1, "Beast"),
@@ -583,13 +614,14 @@ def Spawn_Mob(difficulty):      #name, hp, min_damage, max_damage, xp_reward, mo
       monster[4] + (difficulty-1),
       monster[5])
 
-def Spawn_Boss(difficulty):     #name, hp, min_damage, max_damage, xp_reward, mob_type
+def Spawn_Boss(difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
   bosses = [
-    ("Bandit Leader", 45, 4, 7, 4,"Humanoid"),
-    ("Alpha Wolf", 35, 4, 8, 4, "Beast"),
-    ("Goblin Leader", 35, 2, 8, 4, "Humanoid"),
-    ("Troll", 55, 2, 6, 4, "Humanoid"),
-    ("Baby Dragon", 60, 3, 10, 5, "Dragonkin")
+    ("Bandit Leader", 45, 4, 7, 4,"Humanoid", "Backstab", lambda x: x*2, 3),
+    ("Alpha Wolf", 35, 4, 8, 4, "Beast", "Dire Fang", lambda x: x+10, 4),
+    ("Goblin Leader", 35, 2, 8, 4, "Humanoid", "Throw Rock", lambda x: x+5, 3),
+    ("Troll", 55, 2, 6, 4, "Humanoid", "Throw Boulder", lambda x: x+20, 5),
+    ("Baby Dragon", 60, 3, 10, 5, "Dragonkin", "Fire Breath", lambda x: x*3 - 5, 4),
+    ("Giant Python", 60, 7, 15, 10, "Beast", "Constrict", lambda x: x*2 + 2, 3)
   ]
   boss = random.choice(bosses)
   return Mob(boss[0],
@@ -597,23 +629,35 @@ def Spawn_Boss(difficulty):     #name, hp, min_damage, max_damage, xp_reward, mo
       boss[2] + (difficulty-1),
       boss[3] + (difficulty-1),
       boss[4] + (difficulty-1) * 2,
-      boss[5])
+      boss[5],
+      boss[6],
+      boss[7],
+      boss[8])
 
-def Loot_Drop():
-  loot_table = [
-      Item("Sharp Stick", "Weapon", min_dmg_bonus=1),
-      Item("Rusty Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=3),
-      Item("Paper Hat", "Helmet", hp_bonus=1),
-      Item("Thin Shirt", "Chest", hp_bonus=2),
-      Item("Mocassins", "Boots", hp_bonus=1)
-  ]
-
-
-  random_num = random.random()
-  if random_num < 0.25:
+def Loot_Drop(loot_type):
+  if loot_type == "basic":
+    loot_table = [
+        Item("Sharp Stick", "Weapon", min_dmg_bonus=1),
+        Item("Rusty Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=3),
+        Item("Paper Hat", "Helmet", hp_bonus=1),
+        Item("Thin Shirt", "Chest", hp_bonus=2),
+        Item("Mocassins", "Boots", hp_bonus=1)
+    ]
+    random_num = random.random()
+    if random_num < 0.25:
+      return random.choice(loot_table)
+    elif random_num < 0.5:
+      return "Healing potion"
+  
+  elif loot_type =="boss":
+    loot_table = [
+        Item("Dragon Tooth", "Weapon", min_dmg_bonus=4, max_dmg_bonus=7),
+        Item("Flaming Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=10),
+        Item("Dragonscale Helmet", "Helmet", hp_bonus=10),
+        Item("Dragonscale Shirt", "Chest", hp_bonus=20),
+        Item("Dragonscale Boots", "Boots", hp_bonus=10)
+    ]
     return random.choice(loot_table)
-  elif random_num < 0.5:
-    return "Healing potion"
   return None
 
 def Handle_Loot(player,mob):
@@ -634,8 +678,6 @@ def Handle_Loot(player,mob):
 def gold_drop(player,difficulty):
   gold_found = random.randint(1+(difficulty-1), difficulty * 3)
   player.gold += gold_found
-  print(f"You found {gold_found} gold! "
-        f"You now have {player.gold} gold.")
 
 """#Game Testing"""
 if __name__ == "__main__":
