@@ -4,6 +4,7 @@ A text-based RPG built in Python and Streamlit featuring dungeon exploration, tu
 
 Players create a character, choose a class, and venture into an increasingly dangerous dungeon filled with monsters, powerful bosses, and valuable loot. Defeat enemies, gain experience, level up, find equipment upgrades, and see how far your adventurer can go before retiring or falling in battle.
 
+[Click Here to Play Dungeon RPG](https://dungeon-rpg-sydney.streamlit.app/)
 ---
 
 ## Features
@@ -129,10 +130,3 @@ Bosses feature:
 - Achievements and records
 
 ---
-
-## How to Run
-
-Install Streamlit:
-
-```bash
-pip install streamlit
