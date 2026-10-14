@@ -82,11 +82,11 @@ class Character:
     self.crit_chance = class_bonus.get("crit_chance", 0)
 
   def attack(self):
-    damage = random.randint(self.min_damage, self.max_damage)
-    crit = random.random() < self.crit_chance
-    if crit:
-      damage *= 2
-    return damage, crit
+    #damage = random.randint(self.min_damage, self.max_damage)
+    #crit = random.random() < self.crit_chance
+    #if crit:
+     # damage *= 2
+    return "TEST" #damage, crit
 
   def equip(self, item):
     old_item = self.equipment[item.slot]
