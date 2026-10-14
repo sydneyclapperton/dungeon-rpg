@@ -16,7 +16,8 @@ CLASS_DATA = {
                 "ability": "Power Strike",
                 "cooldown": 4,
                 "ability_desc": "Doubles attack damage",
-                "ability_effect": lambda x : x * 2},
+                "ability_effect": lambda x : x * 2,
+                "crit_chance": 0.05},
   "Mage" : {"hp": -10,
               "min_damage":3,
               "max_damage":5,
@@ -24,7 +25,8 @@ CLASS_DATA = {
               "ability": "Fireball",
               "cooldown": 3,
               "ability_desc": "Adds 15 damage to attack",
-              "ability_effect": lambda x : x + 15},
+              "ability_effect": lambda x : x + 15,
+              "crit_chance": 0.1},
   "Rogue" : {"hp": 0,
               "min_damage":0,
               "max_damage":7,
@@ -32,7 +34,8 @@ CLASS_DATA = {
               "ability": "Knife Throw",
               "cooldown": 3,
               "ability_desc": "Doubles attack damage and adds 5",
-              "ability_effect": lambda x : x*2 + 5},
+              "ability_effect": lambda x : x*2 + 5,
+              "crit_chance": 0.2},
   "Paladin" : {"hp": 30,
             "min_damage":1,
             "max_damage":2,
@@ -40,7 +43,8 @@ CLASS_DATA = {
             "ability": "Smite",
             "cooldown": 2,
             "ability_desc": "Adds 10 damage to attack",
-            "ability_effect": lambda x : x + 10}
+            "ability_effect": lambda x : x + 10,
+            "crit_chance": 0.09}
 }
 
 #Object Creation
@@ -75,9 +79,14 @@ class Character:
     self.ability_desc = class_bonus.get("ability_desc")
     self.ability_cooldown = class_bonus.get("cooldown", 0)
     self.special_cooldown = 0
+    self.crit_chance = class_bonus.get("crit_chance", 0)
 
   def attack(self):
-    return random.randint(self.min_damage, self.max_damage)
+    damage = random.randint(self.min_damage, self.max_damage)
+    crit = random.random() < self.crit_chance
+    if crit:
+      damage *= 2
+    return damage, crit
 
   def equip(self, item):
     old_item = self.equipment[item.slot]
@@ -106,7 +115,7 @@ class Character:
           f"Value: {item.value}g")
 
   def level_up(self):
-    xp_needed = self.level*5 - 2
+    xp_needed = self.level * 10
     if self.xp >= xp_needed:
       self.level += 1
       self.min_damage += 2
@@ -133,7 +142,7 @@ class Character:
     return (f"Name: {self.name}\nClass: {self.player_class}\n"
           f"Ability: {self.special_ability}\nLevel: {self.level}\n"
           f"Effect: {self.ability_desc}\n"
-          f"Current XP: {self.xp}/{self.level*5 - 2}\n\n"
+          f"Current XP: {self.xp}/{self.level*10}\n\n"
           f"HP: {self.hp}/{self.max_hp}\n"
           f"Damage: {self.min_damage}-{self.max_damage}\n\n"
           f"Gold: {self.gold}\n"
@@ -207,10 +216,11 @@ class Character:
   def use_special(self, mob):
     if self.special_cooldown > 0:
         return None
-    damage = self.ability_effect(self.attack())
+    damage, crit = self.attack()
+    damage = self.ability_effect(damage)
     mob.hp -= damage
     self.special_cooldown = self.ability_cooldown
-    return damage
+    return damage, crit
 
   def reduce_cooldown(self):
     if self.special_cooldown > 0:
@@ -608,9 +618,9 @@ def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_
   ]
   monster = random.choice(monsters)
   return Mob(monster[0],
-      monster[1] + (difficulty-1) * 3,
+      monster[1] + (difficulty-1) * 4,
       monster[2] + (difficulty-1),
-      monster[3] + (difficulty-1),
+      monster[3] + (difficulty-1) * 2,
       monster[4] + (difficulty-1),
       monster[5])
 
@@ -626,9 +636,9 @@ def Spawn_Boss(difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_
   boss = random.choice(bosses)
   return Mob(boss[0],
       boss[1] + (difficulty-1) * 5,
-      boss[2] + (difficulty-1),
-      boss[3] + (difficulty-1),
-      boss[4] + (difficulty-1) * 2,
+      boss[2] + (difficulty-1) * 2,
+      boss[3] + (difficulty-1) * 3,
+      boss[4] + (difficulty-1),
       boss[5],
       boss[6],
       boss[7],

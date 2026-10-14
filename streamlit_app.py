@@ -211,10 +211,13 @@ elif st.session_state.screen == "dungeon":
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Attack"):
-                damage = player.attack()
+                damage, crit = player.attack()
                 player.reduce_cooldown()
                 mob.hp -= damage
-                st.session_state.combat_log.append(f"You hit the {mob.name} for {damage} damage.")
+                if crit:
+                    st.session_state.combat_log.append(f"Critical hit! You hit the {mob.name} for {damage} damage.")
+                else:
+                    st.session_state.combat_log.append(f"You hit the {mob.name} for {damage} damage.")
                 if mob.hp <= 0:
                     st.session_state.combat_log.append(f"You defeated the {mob.name}.")
                     rewards = handle_victory(player, mob, st.session_state.floor)
@@ -243,11 +246,15 @@ elif st.session_state.screen == "dungeon":
                 st.rerun()
             
             if st.button(f"{player.special_ability} (CD: {player.special_cooldown})"):
-                damage = player.use_special(mob)
-                if damage is None:
+                result = player.use_special(mob)
+                if result is None:
                     st.error(f"{player.special_ability} is on cooldown: {player.special_cooldown} turns remaining.")
                 else:
-                    st.session_state.combat_log.append(f"Your {player.special_ability} did {damage} damage.")
+                    damage, crit = result
+                    if crit:
+                        st.session_state.combat_log.append(f"Critical hit! Your {player.special_ability} did {damage} damage.")
+                    else:
+                        st.session_state.combat_log.append(f"Your {player.special_ability} did {damage} damage.")
                     if mob.hp <= 0:
                         st.session_state.combat_log.append(f"You defeated the {mob.name}.")
                         rewards = handle_victory(player, mob, st.session_state.floor)
@@ -273,7 +280,7 @@ elif st.session_state.screen == "dungeon":
                         else:
                             st.session_state.combat_log.append(f"The {mob.name} used {mob.ability_name}! It dealt {enemy_damage} damage.")
                         player.hp -= enemy_damage
-                st.rerun()
+                    st.rerun()
 
         with col2:
             if st.button("Use Potion"):
