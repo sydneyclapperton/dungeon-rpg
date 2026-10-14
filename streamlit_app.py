@@ -40,6 +40,13 @@ if st.session_state.screen == "char_creation":
 
 elif st.session_state.screen == "town":
     player = st.session_state.player_character
+    if "run_stats" not in st.session_state:
+        st.session_state.run_stats = {
+            "kills": 0,
+            "boss_kills": 0,
+            "xp_earned": 0,
+            "gold_earned": 0,
+            "items_found": 0}
     st.header("Town")
     if "inn_message" in st.session_state:
         st.success(st.session_state.inn_message)
@@ -93,6 +100,8 @@ elif st.session_state.screen == "retired":
             del st.session_state.xp_gained
         if "floor" in st.session_state:
             del st.session_state.floor
+        if "run_stats" in st.session_state:
+            del st.session_state.run_stats
         st.session_state.screen = "char_creation"
         st.rerun()            
 elif st.session_state.screen == "inventory":
@@ -181,13 +190,6 @@ elif st.session_state.screen == "dungeon":
     player = st.session_state.player_character
     if "floor" not in st.session_state:
         st.session_state.floor = 1
-    if "run_stats" not in st.session_state:
-        st.session_state.run_stats = {
-            "kills": 0,
-            "boss_kills": 0,
-            "xp_earned": 0,
-            "gold_earned": 0,
-            "items_found": 0}
     st.header(f"Dungeon - Floor: {st.session_state.floor}")
     if st.session_state.floor % 5 == 0:
         st.warning("Boss Floor!")
