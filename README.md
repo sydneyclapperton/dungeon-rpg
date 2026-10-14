@@ -1,90 +1,138 @@
-# dungeon-rpg
-A text-based RPG built in Python featuring dungeon exploration, turn-based combat, leveling, loot drops, equipment, and boss encounters.
- 
-A text-based role-playing game built in Python using object-oriented programming principles.
- 
-Players create a character and venture into dangerous dungeons filled with monsters, bosses, and valuable loot. As enemies are defeated, players earn experience, level up, improve their equipment, and take on increasingly difficult challenges.
- 
+# Dungeon RPG
+
+A text-based RPG built in Python and Streamlit featuring dungeon exploration, turn-based combat, character classes, equipment progression, boss encounters, and dungeon run tracking.
+
+Players create a character, choose a class, and venture into an increasingly dangerous dungeon filled with monsters, powerful bosses, and valuable loot. Defeat enemies, gain experience, level up, find equipment upgrades, and see how far your adventurer can go before retiring or falling in battle.
+
 ---
- 
+
 ## Features
 
 ### Character System
+
 - Create a custom character
 - Choose a character name and class
-- Level up through combat
-- Health and damage scaling as you progress
-- Character statistics and equipment tracking
+- Four playable classes:
+  - Warrior
+  - Mage
+  - Rogue
+  - Paladin
+- Class-specific combat abilities
+- Character leveling system
+- Full heal on level up
+- Character stats displayed in a sidebar
 
 ### Combat System
-- Turn-based battles
+
+- Turn-based combat
 - Randomized damage rolls
+- Class abilities with cooldowns
 - Healing potion system
-- Enemy inspection
-- Ability to run from encounters
+- Enemy abilities and cooldowns
+- Combat log displaying battle events
 
 ### Dungeon System
-- Multiple dungeon difficulty levels
+
+- Multi-floor dungeon progression
+- Enemy scaling based on floor level
 - Random monster encounters
-- Multi-floor dungeon exploration
-- Difficulty-based enemy scaling
-- Boss battles at the end of each dungeon
+- Boss encounters every 5 floors
+- Boss-specific abilities
+- Boss reward bonuses
 
 ### Loot & Equipment
-- Random loot drops from defeated enemies
+
+- Random loot drops
+- Guaranteed boss loot
 - Equipment slots:
   - Weapon
   - Helmet
   - Chest
   - Boots
-- Equipment provides stat bonuses
-- Inventory system
-- Equip items directly from inventory
-- Item selling system
+- Equipment grants stat bonuses
+- Inventory management
+- Item equipping and swapping
 
 ### Progression & Economy
+
 - Experience (XP) rewards
-- Character leveling
-- Increased health and damage with each level
-- Full heal on level up
 - Gold rewards from combat
-- Healing potion drops
-- Functional shop system
-- Inn for rest and recovery
+- Bonus gold from boss encounters
+- Shop system
+- Potion purchasing
+- Item selling system
+- Inn for healing and recovery
+
+### Run Tracking
+
+- Dungeon run statistics
+- Monsters defeated
+- Bosses defeated
+- XP earned
+- Gold earned
+- Items found
+- Career Summary upon retirement
+- Life Summary upon death
 
 ### Town Hub
-- Return to town after dungeon runs
+
 - Shop
+- Sell equipment
 - Inn
-- Character management menu
-- Begin new dungeon runs or retire your character
- 
+- Inventory management
+- Enter dungeon
+- Retire character
+
 ---
- 
+
+## Boss Encounters
+
+Every 5th floor contains a boss encounter.
+
+Current bosses include:
+
+- Bandit Leader
+- Alpha Wolf
+- Goblin Leader
+- Troll
+- Baby Dragon
+- Giant Python
+
+Bosses feature:
+
+- Increased stats
+- Unique combat abilities
+- Bonus rewards
+- Guaranteed boss loot
+
+---
+
+## Technologies Used
+
+- Python 3
+- Streamlit
+- Object-Oriented Programming (OOP)
+- Python `random` module
+
+---
+
 ## Planned Features
 
-- Save and load system
-- Additional monsters and bosses
-- Expanded loot tables
-- Item rarity system
-- More equipment tiers
-- Character class specialization
-- Improved inventory management
-- Streamlit web interface
- 
+- Save/load system
+- Additional character classes
+- More monsters and bosses
+- Expanded boss mechanics
+- Additional equipment sets
+- Loot rarity system
+- Status effects (Poison, Burn, Stun, etc.)
+- Elite enemies
+- Achievements and records
+
 ---
- 
-## Technologies Used
- 
-- Python 3
-- Object-Oriented Programming (OOP)
-- Randomized game systems using Python's `random` module
- 
----
- 
-## How to Play
- 
-Run the program and start a new adventure:
- 
-```python
-Start_Game()
+
+## How to Run
+
+Install Streamlit:
+
+```bash
+pip install streamlit
