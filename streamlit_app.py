@@ -211,10 +211,9 @@ elif st.session_state.screen == "dungeon":
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Attack"):
-                st.write(player.attack())
-                #damage, crit = player.attack()
+                damage, crit = player.attack()
                 player.reduce_cooldown()
-                #mob.hp -= damage
+                mob.hp -= damage
                 if crit:
                     st.session_state.combat_log.append(f"Critical hit! You hit the {mob.name} for {damage} damage.")
                 else:
