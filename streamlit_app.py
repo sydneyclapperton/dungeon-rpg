@@ -24,7 +24,8 @@ if st.session_state.screen == "char_creation":
     st.write(f"Critical Chance: {stats['crit_chance']:.0%}")
     st.write(f"Ability: {stats['ability']}")
     st.write(f"Effect: {stats['ability_desc']}")
-    st.write(f"Class Description: {stats['class_desc']}")
+    
+    st.markdown(f"*{stats['class_desc']}*")
 
     if st.button("Create Character"):
         name = player_name.strip()
