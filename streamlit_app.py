@@ -21,8 +21,10 @@ if st.session_state.screen == "char_creation":
     st.write(f"HP Modifier: {stats['hp']:+}")
     st.write(f"Min Damage Modifier: {stats['min_damage']:+}")
     st.write(f"Max Damage Modifier: {stats['max_damage']:+}")
+    st.write(f"Critical Chance: {stats['crit_chance']:.0%}")
     st.write(f"Ability: {stats['ability']}")
     st.write(f"Effect: {stats['ability_desc']}")
+    st.write(f"Class Description: {stats['class_desc']}")
 
     if st.button("Create Character"):
         name = player_name.strip()
