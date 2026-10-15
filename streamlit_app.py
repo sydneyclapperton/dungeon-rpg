@@ -1,5 +1,4 @@
 import streamlit as st
-import random
 from dungeon_rpg import CLASS_DATA, Character, Spawn_Mob, Item, Loot_Drop, handle_victory, Spawn_Boss
 st.title("Dungeon RPG")
 
@@ -10,6 +9,13 @@ if "player_character" in st.session_state:
     with st.sidebar:
         st.header("Character Stats")
         st.text(player.view_stats())
+        st.subheader("Equipment")
+        for slot, item in player.equipment.items():
+            if item:
+                st.write(f"{slot}: {item.name}")
+            else:
+                st.write(f"{slot}: None")
+                
 if "combat_log" not in st.session_state:
     st.session_state.combat_log = []
 if st.session_state.screen == "char_creation":
@@ -300,7 +306,7 @@ elif st.session_state.screen == "dungeon":
                             mob.reduce_cooldown()
                         else:
                             st.session_state.combat_log.append(f"The {mob.name} used {mob.ability_name}! It dealt {enemy_damage} damage.")
-                    player.hp -= enemy_damage
+                        player.hp -= enemy_damage
                     st.rerun()
                 else:
                     st.error("You have no potions!")
