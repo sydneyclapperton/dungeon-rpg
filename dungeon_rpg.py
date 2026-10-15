@@ -18,7 +18,7 @@ CLASS_DATA = {
                 "ability_desc": "Doubles attack damage",
                 "ability_effect": lambda x : x * 2,
                 "crit_chance": 0.05,
-                "class_desc": "A seasoned fighter with high health and reliable damage."},
+                "class_desc": "A seasoned fighter with high health and reliable damage"},
   "Mage" : {"hp": -10,
               "min_damage":3,
               "max_damage":5,
@@ -27,8 +27,8 @@ CLASS_DATA = {
               "cooldown": 3,
               "ability_desc": "Adds 15 damage to attack",
               "ability_effect": lambda x : x + 15,
-              "crit_chance": 0.1,
-              "class_desc": "A fragile spellcaster who relies on powerful magic."},
+              "crit_chance": 0.12,
+              "class_desc": "A fragile spellcaster who relies on powerful magic"},
   "Rogue" : {"hp": 0,
               "min_damage":0,
               "max_damage":7,
@@ -38,7 +38,7 @@ CLASS_DATA = {
               "ability_desc": "Doubles attack damage and adds 5",
               "ability_effect": lambda x : x*2 + 5,
               "crit_chance": 0.2,
-              "class_desc": "A nimble assassin who excels at critical strikes."},
+              "class_desc": "A nimble assassin who excels at critical strikes"},
   "Paladin" : {"hp": 30,
             "min_damage":1,
             "max_damage":2,
@@ -48,7 +48,7 @@ CLASS_DATA = {
             "ability_desc": "Adds 10 damage to attack",
             "ability_effect": lambda x : x + 10,
             "crit_chance": 0.09,
-            "class_desc": "A holy warrior with exceptional durability."},
+            "class_desc": "A holy warrior with exceptional durability"},
     "Commoner" : {"hp": -10,
                 "min_damage":0,
                 "max_damage": -1,
@@ -58,7 +58,7 @@ CLASS_DATA = {
                 "ability_desc": "Adds 2 damage to attack",
                 "ability_effect": lambda x : x + 2,
                 "crit_chance": 0.01,
-                "class_desc": "A perfectly ordinary person who made several bad decisions and somehow ended up in a dungeon."},
+                "class_desc": "An ordinary person who made several bad decisions and somehow ended up in a dungeon"},
 }
 
 #Object Creation
@@ -665,7 +665,9 @@ def Loot_Drop(loot_type):
         Item("Rusty Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=3),
         Item("Paper Hat", "Helmet", hp_bonus=1),
         Item("Thin Shirt", "Chest", hp_bonus=2),
-        Item("Mocassins", "Boots", hp_bonus=1)
+        Item("Mocassins", "Boots", hp_bonus=1),
+        Item("Used Wizard Robes", "Chest", hp_bonus = -5, min_dmg_bonus= 1, max_dmg_bonus=3),
+        Item("Smelly Leather Shoes", "Boots", hp_bonus = 5, min_dmg_bonus= -1)
     ]
     random_num = random.random()
     if random_num < 0.25:
