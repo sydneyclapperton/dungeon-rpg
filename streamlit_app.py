@@ -114,9 +114,9 @@ elif st.session_state.screen == "inventory":
     for slot, item in player.equipment.items():
         if item:
             st.write(f"{slot}: {item.name} | "
-            f"HP +{item.hp_bonus} | "
-            f"Min DMG +{item.min_dmg_bonus} | "
-            f"Max DMG +{item.max_dmg_bonus}")
+            f"HP {item.hp_bonus:+} | "
+            f"Min DMG {item.min_dmg_bonus:+} | "
+            f"Max DMG {item.max_dmg_bonus:+}")
         else:
             st.write(f"{slot}: None")
     st.subheader("Inventory")
@@ -126,9 +126,9 @@ elif st.session_state.screen == "inventory":
         for i, item in enumerate(player.inventory):
             st.write(
             f"{item.name} | "
-            f"HP +{item.hp_bonus} | "
-            f"Min DMG +{item.min_dmg_bonus} | "
-            f"Max DMG +{item.max_dmg_bonus}")
+            f"HP {item.hp_bonus:+} | "
+            f"Min DMG {item.min_dmg_bonus:+} | "
+            f"Max DMG {item.max_dmg_bonus:+}")
             if st.button(f"Equip {item.name}", key=f"equip_{i}"):
                 old_item = player.equipment[item.slot]
                 player.equip(item)
@@ -174,9 +174,9 @@ elif st.session_state.screen == "sell":
         for i,item in enumerate(player.inventory):
             st.write(
                 f"{item.name} | "
-                f"HP +{item.hp_bonus} | "
-                f"Min DMG +{item.min_dmg_bonus} | "
-                f"Max DMG +{item.max_dmg_bonus} | "
+                f"HP {item.hp_bonus:+} | "
+                f"Min DMG {item.min_dmg_bonus:+} | "
+                f"Max DMG {item.max_dmg_bonus:+} | "
                 f"Value: {item.value}g | "
                 f"Sell: {item.value//2}g")
             if st.button(f"Sell {item.name}", key=f"sell_{i}"):
