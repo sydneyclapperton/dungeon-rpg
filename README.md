@@ -1,10 +1,11 @@
 # Dungeon RPG
 
-A text-based RPG built in Python and Streamlit featuring dungeon exploration, turn-based combat, character classes, equipment progression, boss encounters, and dungeon run tracking.
+A browser-based RPG built with Python and Streamlit featuring dungeon exploration, turn-based combat, character classes, equipment progression, boss encounters, save/load functionality, and dungeon run tracking.
 
-Players create a character, choose a class, and venture into an increasingly dangerous dungeon filled with monsters, powerful bosses, and valuable loot. Defeat enemies, gain experience, level up, find equipment upgrades, and see how far your adventurer can go before retiring or falling in battle.
+Players create a character, choose a class, and venture into an increasingly dangerous dungeon filled with monsters, powerful bosses, and valuable loot. Defeat enemies, gain experience, level up, discover new equipment, and see how far your adventurer can go before retiring or falling in battle.
 
-[Click Here to Play Dungeon RPG](https://dungeon-rpg-sydney.streamlit.app/)
+[Play Dungeon RPG](https://dungeon-rpg-sydney.streamlit.app/)
+
 ---
 
 ## Features
@@ -13,20 +14,23 @@ Players create a character, choose a class, and venture into an increasingly dan
 
 - Create a custom character
 - Choose a character name and class
-- Four playable classes:
+- Five playable classes:
   - Warrior
   - Mage
   - Rogue
   - Paladin
+  - Commoner
 - Class-specific combat abilities
 - Character leveling system
 - Full heal on level up
-- Character stats displayed in a sidebar
+- Character stats displayed in the sidebar
+- Equipment displayed in the sidebar
 
 ### Combat System
 
 - Turn-based combat
 - Randomized damage rolls
+- Critical hit system
 - Class abilities with cooldowns
 - Healing potion system
 - Enemy abilities and cooldowns
@@ -51,8 +55,9 @@ Players create a character, choose a class, and venture into an increasingly dan
   - Chest
   - Boots
 - Equipment grants stat bonuses
+- Equipment swapping
 - Inventory management
-- Item equipping and swapping
+- Item selling system
 
 ### Progression & Economy
 
@@ -61,8 +66,23 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Bonus gold from boss encounters
 - Shop system
 - Potion purchasing
-- Item selling system
+- Item selling
 - Inn for healing and recovery
+
+### Save & Load System
+
+- Downloadable save files
+- Upload save files to continue existing characters
+- Save data includes:
+  - Character information
+  - Level and XP
+  - Current HP
+  - Gold
+  - Potions
+  - Equipped gear
+  - Inventory contents
+- Works on desktop and mobile devices
+- No account required
 
 ### Run Tracking
 
@@ -82,6 +102,7 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Inn
 - Inventory management
 - Enter dungeon
+- Save game
 - Retire character
 
 ---
@@ -113,13 +134,13 @@ Bosses feature:
 - Python 3
 - Streamlit
 - Object-Oriented Programming (OOP)
+- JSON save files
 - Python `random` module
 
 ---
 
 ## Planned Features
 
-- Save/load system
 - Additional character classes
 - More monsters and bosses
 - Expanded boss mechanics
@@ -128,5 +149,5 @@ Bosses feature:
 - Status effects (Poison, Burn, Stun, etc.)
 - Elite enemies
 - Achievements and records
-
----
+- Monster artwork
+- Dungeon events
