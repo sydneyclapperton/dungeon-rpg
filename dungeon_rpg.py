@@ -1,5 +1,6 @@
 #packages
 import random
+import json
 
 """#Object Creation
 
@@ -128,7 +129,7 @@ class Character:
 
   def view_stats(self):
     return (f"Name: {self.name}\nClass: {self.player_class}\n"
-          f"Ability: {self.special_ability}\nLevel: {self.level}\n"
+          f"Level: {self.level}\nAbility: {self.special_ability}\n"
           f"Effect: {self.ability_desc}\n"
           f"Current XP: {self.xp}/{self.level*10}\n\n"
           f"HP: {self.hp}/{self.max_hp}\n"
@@ -266,10 +267,8 @@ def Spawn_Boss(difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_
       boss[6],
       boss[7],
       boss[8])
-
-def Loot_Drop(loot_type):
-  if loot_type == "basic":
-    loot_table = [
+#Loot tables
+basic_loot_table = [
         Item("Sharp Stick", "Weapon", min_dmg_bonus=1),
         Item("Rusty Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=3),
         Item("Paper Hat", "Helmet", hp_bonus=1),
@@ -279,21 +278,52 @@ def Loot_Drop(loot_type):
         Item("Smelly Leather Shoes", "Boots", hp_bonus = 5, min_dmg_bonus= -1),
         Item("Bucket", "Helmet", hp_bonus = 10, min_dmg_bonus =-1, max_dmg_bonus = -3)
     ]
-    random_num = random.random()
-    if random_num < 0.25:
-      return random.choice(loot_table)
-    elif random_num < 0.5:
-      return "Healing potion"
-  
-  elif loot_type =="boss":
-    loot_table = [
+boss_loot_table= [
         Item("Dragon Tooth", "Weapon", min_dmg_bonus=4, max_dmg_bonus=7),
         Item("Flaming Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=10),
         Item("Dragonscale Helmet", "Helmet", hp_bonus=10),
         Item("Dragonscale Shirt", "Chest", hp_bonus=20),
         Item("Dragonscale Boots", "Boots", hp_bonus=10)
     ]
-    return random.choice(loot_table)
+
+def Loot_Drop(loot_type):
+  if loot_type == "basic":
+    random_num = random.random()
+    if random_num < 0.25:
+      return random.choice(basic_loot_table)
+    elif random_num < 0.5:
+      return "Healing potion"
+  
+  elif loot_type =="boss":
+    return random.choice(boss_loot_table)
   return None
 
+#Save Game
+def save_game(player):
+    return {
+        "name": player.name,
+        "player_class": player.player_class,
+        "level": player.level,
+        "xp": player.xp,
+        "hp": player.hp,
+        "gold": player.gold,
+        "healing_potions": player.healing_potions,
+        "equipment": {
+            slot: item.name if item else None
+            for slot, item in player.equipment.items()
+        },
+        "inventory": [item.name for item in player.inventory]
+    }
 
+#Load Game
+def load_game(uploaded_file):
+  return json.load(uploaded_file)
+
+
+#Item lookup
+def get_item_by_name(name):
+    for item in basic_loot_table + boss_loot_table:
+        if item.name == name:
+            return item
+    return None
+    

@@ -1,5 +1,7 @@
 import streamlit as st
-from dungeon_rpg import CLASS_DATA, Character, Spawn_Mob, Item, Loot_Drop, handle_victory, Spawn_Boss
+import json
+from dungeon_rpg import (CLASS_DATA, Character, Spawn_Mob, 
+    handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name)
 st.title("Dungeon RPG")
 
 if "screen" not in st.session_state:
@@ -46,6 +48,35 @@ if st.session_state.screen == "char_creation":
             )
             st.session_state.screen = "town"
             st.rerun()
+        
+    uploaded_save = st.file_uploader("Load Save File",type=["json"])
+    if uploaded_save:
+        save_data = load_game(uploaded_save)
+        player = Character(
+            save_data["name"],
+            save_data["player_class"])
+        saved_level = save_data["level"]
+        while player.level < saved_level:
+            player.level += 1
+            player.min_damage += 2
+            player.max_damage += 3
+            player.max_hp += 10
+        player.xp = save_data["xp"]
+        player.gold = save_data["gold"]
+        player.healing_potions = save_data["healing_potions"]
+        for slot, item_name in save_data["equipment"].items():
+            if item_name:
+                item = get_item_by_name(item_name)
+                if item:
+                    player.equip(item)
+        for item_name in save_data["inventory"]:
+            item = get_item_by_name(item_name)
+            if item:
+                player.inventory.append(item)
+        player.hp = min(save_data["hp"], player.max_hp)
+        st.session_state.player_character = player
+        st.session_state.screen = "town"
+        st.rerun()
 
 elif st.session_state.screen == "town":
     player = st.session_state.player_character
@@ -81,6 +112,15 @@ elif st.session_state.screen == "town":
         if st.button("Dungeon"):
             st.session_state.screen = "dungeon"
             st.rerun()
+        
+        save_data = save_game(player)
+        if st.download_button(label="Save Game",
+            data=json.dumps(save_data),
+            file_name=f"{player.name}_save.json",
+            mime="application/json"
+            ):
+                st.success("Game saved!")
+        
         if st.button("Retire"):
             st.session_state.screen = "retired"
             st.rerun()
