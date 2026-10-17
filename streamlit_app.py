@@ -1,7 +1,7 @@
 import streamlit as st
 import json
 from dungeon_rpg import (CLASS_DATA, Character, Spawn_Mob, 
-    handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name)
+    handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name, shop_loot_table)
 st.title("Dungeon RPG")
 
 if "screen" not in st.session_state:
@@ -201,6 +201,9 @@ elif st.session_state.screen == "shop":
             st.rerun()
         else:
             st.error("Not enough gold!")
+    if st.button("Buy Equipment"):
+        st.session_state.screen = "buy_equipment"
+        st.rerun()
     if st.button("Sell"):
         st.session_state.screen = "sell"
         st.rerun()
@@ -234,7 +237,31 @@ elif st.session_state.screen == "sell":
     if st.button("Return to Shop"):
         st.session_state.screen = "shop"
         st.rerun()
-
+elif st.session_state.screen == "buy_equipment":
+    if "shop_message" in st.session_state:
+        st.success(st.session_state.shop_message)
+        del st.session_state.shop_message
+    st.header("Buy Equipment")
+    for i,item in enumerate(shop_loot_table):
+            st.write(
+                f"{item.name} | "
+                f"HP {item.hp_bonus:+} | "
+                f"Min DMG {item.min_dmg_bonus:+} | "
+                f"Max DMG {item.max_dmg_bonus:+} | "
+                f"Value: {item.value}g | "
+                )
+            if st.button(f"Buy {item.name}", key=f"buy_{i}"):
+                if player.gold < item.value:
+                    st.error("You don't have enough gold")
+                else:
+                    player.gold-=item.value
+                    player.inventory.append(item)
+                    st.session_state.shop_message = (
+                        f"Bought {item.name} for {item.value} gold.")
+                    st.rerun()
+    if st.button("Return to Shop"):
+        st.session_state.screen = "shop"
+        st.rerun()
 elif st.session_state.screen == "dungeon":
     player = st.session_state.player_character
     if "floor" not in st.session_state:

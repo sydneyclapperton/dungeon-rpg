@@ -227,19 +227,26 @@ def handle_victory(player, mob, difficulty):
         "leveled_up": leveled_up}
 
 """#Monster and Loot Tables"""
-
-def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
-  monsters = [
-    ("Goblin", 10, 1, 5, 1,"Humanoid"),
-    ("Wolf", 15, 2, 6, 1, "Beast"),
-    ("Bandit Fighter", 20, 3, 5, 2, "Humanoid"),
-    ("Rat", 10, 1, 4, 1, "Beast"),
-    ("Imp", 10, 3, 4, 1, "Demon"),
-    ("Bandit Archer", 15, 5, 6, 2, "Human"),
-    ("Giant Spider", 12, 2, 5, 1, "Beast"),
-    ("Boar", 20, 1, 5, 2, "Beast"),
-    ("Lesser Drake", 18, 2, 6, 2, "Dragonkin")
+monsters = [
+  ("Goblin", 10, 1, 5, 1,"Humanoid"),
+  ("Wolf", 15, 2, 6, 1, "Beast"),
+  ("Bandit Fighter", 20, 3, 5, 2, "Humanoid"),
+  ("Rat", 10, 1, 4, 1, "Beast"),
+  ("Imp", 10, 3, 4, 1, "Demon"),
+  ("Bandit Archer", 15, 5, 6, 2, "Human"),
+  ("Giant Spider", 12, 2, 5, 1, "Beast"),
+  ("Boar", 20, 1, 5, 2, "Beast"),
+  ("Lesser Drake", 18, 2, 6, 2, "Dragonkin")
+]
+bosses = [
+    ("Bandit Leader", 45, 4, 7, 4,"Humanoid", "Backstab", lambda x: x*2, 3),
+    ("Alpha Wolf", 35, 4, 8, 4, "Beast", "Dire Fang", lambda x: x+10, 4),
+    ("Goblin Leader", 35, 2, 8, 4, "Humanoid", "Throw Rock", lambda x: x+5, 3),
+    ("Troll", 55, 2, 6, 4, "Humanoid", "Throw Boulder", lambda x: x+20, 5),
+    ("Baby Dragon", 60, 3, 10, 5, "Dragonkin", "Fire Breath", lambda x: x*3 - 5, 4),
+    ("Giant Python", 60, 7, 15, 10, "Beast", "Constrict", lambda x: x*2 + 2, 3)
   ]
+def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
   monster = random.choice(monsters)
   return Mob(monster[0],
       monster[1] + (difficulty-1) * 4,
@@ -249,14 +256,6 @@ def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_
       monster[5])
 
 def Spawn_Boss(difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
-  bosses = [
-    ("Bandit Leader", 45, 4, 7, 4,"Humanoid", "Backstab", lambda x: x*2, 3),
-    ("Alpha Wolf", 35, 4, 8, 4, "Beast", "Dire Fang", lambda x: x+10, 4),
-    ("Goblin Leader", 35, 2, 8, 4, "Humanoid", "Throw Rock", lambda x: x+5, 3),
-    ("Troll", 55, 2, 6, 4, "Humanoid", "Throw Boulder", lambda x: x+20, 5),
-    ("Baby Dragon", 60, 3, 10, 5, "Dragonkin", "Fire Breath", lambda x: x*3 - 5, 4),
-    ("Giant Python", 60, 7, 15, 10, "Beast", "Constrict", lambda x: x*2 + 2, 3)
-  ]
   boss = random.choice(bosses)
   return Mob(boss[0],
       boss[1] + (difficulty-1) * 5,
@@ -285,7 +284,14 @@ boss_loot_table= [
         Item("Dragonscale Shirt", "Chest", hp_bonus=20),
         Item("Dragonscale Boots", "Boots", hp_bonus=10)
     ]
-
+shop_loot_table = [
+  Item("Bronze Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=5, value=25),
+  Item("Magic Wand", "Weapon", min_dmg_bonus=1, max_dmg_bonus=8, value=25),
+  Item("Leather Cap", "Helmet", hp_bonus=5, value=15),
+  Item("Leather Shirt", "Chest", hp_bonus=15, value=30),
+  Item("Leather Boots", "Boots", hp_bonus=5, value=15),
+  Item("Steel Longblade", "Weapon", min_dmg_bonus=10, max_dmg_bonus=20, value= 250)
+]
 def Loot_Drop(loot_type):
   if loot_type == "basic":
     random_num = random.random()
