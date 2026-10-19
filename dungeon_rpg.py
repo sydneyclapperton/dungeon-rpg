@@ -100,8 +100,9 @@ class Character:
       "boss_kills": 0,
       "xp_earned": 0,
       "gold_earned": 0,
-      "items_found": 0
-  }
+      "items_found": 0}
+    self.signature = None
+    self.signature_cd = 0
 
   def attack(self):
     damage = random.randint(self.min_damage, self.max_damage)
@@ -136,17 +137,21 @@ class Character:
       return False
 
   def view_stats(self):
+    signature_text = ""
+    if self.signature:
+        signature_text = f"Signature Move: {self.signature}\n"
+    
     return (f"Name: {self.name}\nClass: {self.player_class}\n"
           f"Level: {self.level}\nAbility: {self.special_ability}\n"
           f"Effect: {self.ability_desc}\n"
-          f"Current XP: {self.xp}/{self.level*10}\n"
+          f"{signature_text}"
+          f"Current XP: {self.xp}/{self.level*10}\n\n"
           f"Highest Floor Cleared: {self.highest_floor}\n\n"
           f"HP: {self.hp}/{self.max_hp}\n"
           f"Damage: {self.min_damage}-{self.max_damage}\n\n"
           f"Gold: {self.gold}\n"
           f"Potions: {self.healing_potions}\n"
           )
-
 
   def use_potion(self):
     if self.healing_potions == 0:
@@ -169,6 +174,49 @@ class Character:
   def reduce_cooldown(self):
     if self.special_cooldown > 0:
       self.special_cooldown -= 1
+    if self.signature_cd > 0:
+      self.signature_cd -= 1
+  
+  def use_signature(self, mob):
+      if self.signature_cd > 0:
+        return None
+      elif self.signature == "Rejuvenation":
+        self.signature_cd = 5
+        heal_amount = int(self.max_hp*.7)
+        self.hp = min(self.hp+heal_amount, self.max_hp)
+        return {
+          "damage": 0,
+          "heal" : heal_amount,
+          "instakill": False}
+      
+      elif self.signature == "Reckoning":
+        self.signature_cd = 6
+        if mob.mob_type in ["Demon", "Undead"]:
+          mob.hp = 0
+          return {
+            "damage": 0,
+            "heal" : 0,
+            "instakill": True}
+        damage, crit = self.attack()
+        damage *= 2.5
+        actual_damage = min(int(damage), mob.hp)
+        mob.hp -= actual_damage
+        return {
+          "damage": actual_damage,
+          "heal" : 0,
+          "instakill": False}
+
+      elif self.signature == "Bloodlust":
+        self.signature_cd = 5
+        damage, crit = self.attack()
+        actual_damage = min(damage*2, mob.hp)
+        healed = int(actual_damage/2)
+        self.hp = min(self.hp + healed, self.max_hp)
+        mob.hp -= actual_damage
+        return {
+          "damage": actual_damage,
+          "heal" : healed,
+          "instakill": False}
 
 """##Monster"""
 
@@ -331,6 +379,8 @@ def save_game(player):
         "healing_potions": player.healing_potions,
         "highest_floor" : player.highest_floor,
         "run_stats": player.run_stats,
+        "signature": player.signature,
+        "signature_cd": player.signature_cd,
         "equipment": {
             slot: item.name if item else None
             for slot, item in player.equipment.items()
