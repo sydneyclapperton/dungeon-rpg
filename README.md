@@ -32,6 +32,7 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Randomized damage rolls
 - Critical hit system
 - Class abilities with cooldowns
+- Signature Move system
 - Healing potion system
 - Enemy abilities and cooldowns
 - Combat log displaying battle events
@@ -44,6 +45,9 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Boss encounters every 5 floors
 - Boss-specific abilities
 - Boss reward bonuses
+- Floor checkpoint system
+- Unlockable starting floors
+- Progress persists between saves
 
 ### Loot & Equipment
 
@@ -68,6 +72,21 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Potion purchasing
 - Item selling
 - Inn for healing and recovery
+- Highest Floor Cleared tracking
+- Unlockable checkpoint progression
+
+### Trainer System
+
+Unlocks at Level 10.
+Players can visit the Trainer to learn powerful Signature Moves. Only one Signature Move can be known at a time, but abilities may be retrained for gold.
+Current Signature Moves:
+- Rejuvenation
+  - Restore 70% of maximum HP
+- Bloodlust
+  - Deal double damage and heal for 50% of damage dealt
+- Reckoning
+  - Heavy damage attack
+  - Instantly destroys Demons and Undead
 
 ### Save & Load System
 
@@ -81,6 +100,10 @@ Players create a character, choose a class, and venture into an increasingly dan
   - Potions
   - Equipped gear
   - Inventory contents
+  - Highest floor cleared
+  - Run statistics
+  - Learned Signature Move
+  - Signature cooldown state
 - Works on desktop and mobile devices
 - No account required
 
@@ -94,6 +117,7 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Items found
 - Career Summary upon retirement
 - Life Summary upon death
+- Highest cleared floor
 
 ### Town Hub
 
@@ -101,7 +125,8 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Sell equipment
 - Inn
 - Inventory management
-- Enter dungeon
+- Trainer
+- Dungeon floor selection
 - Save game
 - Retire character
 
@@ -143,6 +168,7 @@ Bosses feature:
 
 - Additional character classes
 - More monsters and bosses
+- Additional Signature Moves
 - Expanded boss mechanics
 - Additional equipment sets
 - Loot rarity system
@@ -150,4 +176,5 @@ Bosses feature:
 - Elite enemies
 - Achievements and records
 - Monster artwork
-- Dungeon events
+- Random dungeon events
+- Additional monster families (Undead, Constructs, Elementals)
