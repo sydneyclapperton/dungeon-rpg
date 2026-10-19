@@ -94,6 +94,14 @@ class Character:
     self.ability_cooldown = class_bonus.get("cooldown", 0)
     self.special_cooldown = 0
     self.crit_chance = class_bonus.get("crit_chance", 0)
+    self.highest_floor = 1
+    self.run_stats = {
+      "kills": 0,
+      "boss_kills": 0,
+      "xp_earned": 0,
+      "gold_earned": 0,
+      "items_found": 0
+  }
 
   def attack(self):
     damage = random.randint(self.min_damage, self.max_damage)
@@ -131,11 +139,13 @@ class Character:
     return (f"Name: {self.name}\nClass: {self.player_class}\n"
           f"Level: {self.level}\nAbility: {self.special_ability}\n"
           f"Effect: {self.ability_desc}\n"
-          f"Current XP: {self.xp}/{self.level*10}\n\n"
+          f"Current XP: {self.xp}/{self.level*10}\n"
+          f"Highest Floor Cleared: {self.highest_floor}\n\n"
           f"HP: {self.hp}/{self.max_hp}\n"
           f"Damage: {self.min_damage}-{self.max_damage}\n\n"
           f"Gold: {self.gold}\n"
-          f"Potions: {self.healing_potions}")
+          f"Potions: {self.healing_potions}\n"
+          )
 
 
   def use_potion(self):
@@ -208,18 +218,23 @@ def handle_victory(player, mob, difficulty):
     player.xp += mob.xp_reward
     leveled_up = player.level_up()
     gold_found = random.randint(1+(difficulty-1), 3*difficulty)
+    player.run_stats["kills"] += 1
     # Boss bonus
     if difficulty % 5 == 0:
         gold_found *= 2
         loot = Loot_Drop("boss")
+        player.run_stats["boss_kills"] += 1
     else:
       loot = Loot_Drop("basic")
     if loot:
+        player.run_stats["items_found"] += 1
         if loot == "Healing potion":
             player.healing_potions += 1
         else:
             player.inventory.append(loot)
     player.gold += gold_found
+    player.run_stats["xp_earned"] += mob.xp_reward
+    player.run_stats["gold_earned"] += gold_found
     return {
         "xp_gained": mob.xp_reward,
         "gold_found": gold_found,
@@ -314,6 +329,8 @@ def save_game(player):
         "hp": player.hp,
         "gold": player.gold,
         "healing_potions": player.healing_potions,
+        "highest_floor" : player.highest_floor,
+        "run_stats": player.run_stats,
         "equipment": {
             slot: item.name if item else None
             for slot, item in player.equipment.items()
@@ -332,4 +349,12 @@ def get_item_by_name(name):
         if item.name == name:
             return item
     return None
-    
+
+
+def get_unlocked_floors(highest_floor):
+    unlocked = [1]
+    checkpoint = 11
+    while checkpoint <= highest_floor + 1:
+        unlocked.append(checkpoint)
+        checkpoint += 10
+    return unlocked

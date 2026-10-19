@@ -1,7 +1,8 @@
 import streamlit as st
 import json
 from dungeon_rpg import (CLASS_DATA, Character, Spawn_Mob, 
-    handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name, shop_loot_table)
+    handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name, shop_loot_table,
+    get_unlocked_floors)
 st.title("Dungeon RPG")
 
 if "screen" not in st.session_state:
@@ -64,12 +65,19 @@ if st.session_state.screen == "char_creation":
         player.xp = save_data["xp"]
         player.gold = save_data["gold"]
         player.healing_potions = save_data["healing_potions"]
-        for slot, item_name in save_data["equipment"].items():
+        player.highest_floor = save_data.get("highest_floor",1)
+        player.run_stats = save_data.get("run_stats", {"kills": 0,
+            "boss_kills": 0,
+            "xp_earned": 0,
+            "gold_earned": 0,
+            "items_found": 0
+        })
+        for slot, item_name in save_data.get("equipment",{}).items():
             if item_name:
                 item = get_item_by_name(item_name)
                 if item:
                     player.equip(item)
-        for item_name in save_data["inventory"]:
+        for item_name in save_data.get("inventory",[]):
             item = get_item_by_name(item_name)
             if item:
                 player.inventory.append(item)
@@ -80,13 +88,7 @@ if st.session_state.screen == "char_creation":
 
 elif st.session_state.screen == "town":
     player = st.session_state.player_character
-    if "run_stats" not in st.session_state:
-        st.session_state.run_stats = {
-            "kills": 0,
-            "boss_kills": 0,
-            "xp_earned": 0,
-            "gold_earned": 0,
-            "items_found": 0}
+    unlocked_floors = get_unlocked_floors(player.highest_floor)
     st.header("Town")
     if "inn_message" in st.session_state:
         st.success(st.session_state.inn_message)
@@ -109,9 +111,15 @@ elif st.session_state.screen == "town":
             st.rerun()
 
     with col2:
-        if st.button("Dungeon"):
-            st.session_state.screen = "dungeon"
-            st.rerun()
+        with st.popover("Dungeon"):
+            if len(unlocked_floors) > 1:
+                selected_floor = st.radio("Choose Starting Floor", unlocked_floors,horizontal=True)
+            else:
+                selected_floor = 1
+            if st.button("Enter Dungeon"):
+                st.session_state.floor = selected_floor
+                st.session_state.screen = "dungeon"
+                st.rerun()
         
         save_data = save_game(player)
         if st.download_button(label="Save Game",
@@ -127,7 +135,7 @@ elif st.session_state.screen == "town":
 elif st.session_state.screen == "retired":
     player = st.session_state.player_character
     st.write(f"{player.name} decided to retire from adventuring.")
-    stats = st.session_state.run_stats
+    stats = player.run_stats
     st.header("Career Summary")
     st.write(f"Level: {player.level}")
     st.write(f"Monsters Defeated: {stats['kills']}")
@@ -149,8 +157,6 @@ elif st.session_state.screen == "retired":
             del st.session_state.xp_gained
         if "floor" in st.session_state:
             del st.session_state.floor
-        if "run_stats" in st.session_state:
-            del st.session_state.run_stats
         st.session_state.screen = "char_creation"
         st.rerun()            
 elif st.session_state.screen == "inventory":
@@ -297,16 +303,10 @@ elif st.session_state.screen == "dungeon":
                 if mob.hp <= 0:
                     st.session_state.combat_log.append(f"You defeated the {mob.name}.")
                     rewards = handle_victory(player, mob, st.session_state.floor)
-                    st.session_state.run_stats["kills"] +=1 
-                    if st.session_state.floor % 5 == 0:
-                        st.session_state.run_stats["boss_kills"] +=1    
-                    st.session_state.run_stats["xp_earned"] += rewards["xp_gained"]
-                    st.session_state.run_stats["gold_earned"] += rewards["gold_found"]
                     st.session_state.xp_gained = rewards["xp_gained"]
                     st.session_state.gold_found = rewards["gold_found"]
                     if rewards["loot"]:
                         st.session_state.loot_found = rewards["loot"]
-                        st.session_state.run_stats["items_found"] += 1
                     if rewards["leveled_up"]:
                         st.session_state.level_message = (f"{player.name} reached level {player.level}!")
                 else:
@@ -334,16 +334,10 @@ elif st.session_state.screen == "dungeon":
                     if mob.hp <= 0:
                         st.session_state.combat_log.append(f"You defeated the {mob.name}.")
                         rewards = handle_victory(player, mob, st.session_state.floor)
-                        st.session_state.run_stats["kills"] +=1 
-                        if st.session_state.floor % 5 == 0:
-                            st.session_state.run_stats["boss_kills"] +=1    
-                        st.session_state.run_stats["xp_earned"] += rewards["xp_gained"]
-                        st.session_state.run_stats["gold_earned"] += rewards["gold_found"]
                         st.session_state.xp_gained = rewards["xp_gained"]
                         st.session_state.gold_found = rewards["gold_found"]
                         if rewards["loot"]:
                             st.session_state.loot_found = rewards["loot"]
-                            st.session_state.run_stats["items_found"] += 1
                         if rewards["leveled_up"]:
                             st.session_state.level_message = (f"{player.name} reached level {player.level}!")
                     else:
@@ -380,6 +374,7 @@ elif st.session_state.screen == "dungeon":
 
     elif mob.hp <=0 and player.hp > 0:
         st.subheader("Victory!")
+        player.highest_floor = max(player.highest_floor, st.session_state.floor)
         if st.session_state.floor % 5 == 0:
             st.success("Boss Defeated!")
         st.write(f"You gained {st.session_state.xp_gained} XP.")
@@ -423,7 +418,7 @@ elif st.session_state.screen == "dungeon":
     
     else:
         st.error("You died!")
-        stats = st.session_state.run_stats
+        stats = player.run_stats
         st.header("Life Summary")
         st.write(f"Level: {player.level}")
         st.write(f"Monsters Defeated: {stats['kills']}")
@@ -433,8 +428,6 @@ elif st.session_state.screen == "dungeon":
         st.write(f"Items Found: {stats['items_found']}")
         if st.button("Game Over"):
             st.session_state.combat_log = []
-            if "run_stats" in st.session_state:
-                del st.session_state.run_stats
             del st.session_state.player_character
             if "mob" in st.session_state:
                 del st.session_state.mob
