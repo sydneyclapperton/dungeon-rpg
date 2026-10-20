@@ -2,7 +2,7 @@ import streamlit as st
 import json
 from dungeon_rpg import (CLASS_DATA, Character, Spawn_Mob, 
     handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name, shop_loot_table,
-    get_unlocked_floors)
+    get_unlocked_floors, create_enhanced_item)
 st.title("Dungeon RPG")
 
 def process_victory(player, mob, floor):
@@ -25,7 +25,10 @@ if "player_character" in st.session_state:
         st.subheader("Equipment")
         for slot, item in player.equipment.items():
             if item:
-                st.write(f"{slot}: {item.name}")
+                item_name = item.name
+                if item.enhancement >0:
+                    item_name += f" +{item.enhancement}"
+                st.write(f"{slot}: {item_name}")
             else:
                 st.write(f"{slot}: None")
                 
@@ -84,15 +87,26 @@ if st.session_state.screen == "char_creation":
             "gold_earned": 0,
             "items_found": 0
         })
-        for slot, item_name in save_data.get("equipment",{}).items():
-            if item_name:
-                item = get_item_by_name(item_name)
+        for slot, item_data in save_data.get("equipment", {}).items():
+            if isinstance(item_data, str):
+                item = get_item_by_name(item_data)
                 if item:
                     player.equip(item)
-        for item_name in save_data.get("inventory",[]):
-            item = get_item_by_name(item_name)
-            if item:
-                player.inventory.append(item)
+            elif item_data:
+                base_item = get_item_by_name(item_data["name"])
+                if base_item:
+                    item = create_enhanced_item(base_item, item_data.get("enhancement", 0))
+                    player.equip(item)
+        for item_data in save_data.get("inventory", []):
+            if isinstance(item_data, str):
+                item = get_item_by_name(item_data)
+                if item:
+                    player.inventory.append(item)
+            else:
+                base_item = get_item_by_name(item_data["name"])
+                if base_item:
+                    item = create_enhanced_item(base_item,item_data.get("enhancement", 0))
+                    player.inventory.append(item)
         player.hp = min(save_data["hp"], player.max_hp)
         st.session_state.player_character = player
         st.session_state.screen = "town"
@@ -125,6 +139,9 @@ elif st.session_state.screen == "town":
             if st.button("Trainer"):
                 st.session_state.screen = "trainer"
                 st.rerun()
+        if st.button("Blacksmith"):
+            st.session_state.screen = "blacksmith"
+            st.rerun()
 
     with col2:
         with st.popover("Dungeon"):
@@ -181,7 +198,10 @@ elif st.session_state.screen == "inventory":
     st.subheader("Equipped")
     for slot, item in player.equipment.items():
         if item:
-            st.write(f"{slot}: {item.name} | "
+            item_name = item.name
+            if item.enhancement > 0:
+                item_name += f" +{item.enhancement}"
+            st.write(f"{slot}: {item_name} | "
             f"HP {item.hp_bonus:+} | "
             f"Min DMG {item.min_dmg_bonus:+} | "
             f"Max DMG {item.max_dmg_bonus:+}")
@@ -192,12 +212,15 @@ elif st.session_state.screen == "inventory":
         st.write("Your inventory is empty.")
     else:
         for i, item in enumerate(player.inventory):
+            item_name = item.name
+            if item.enhancement > 0:
+                item_name += f" +{item.enhancement}"
             st.write(
-            f"{item.name} | "
+            f"{item_name} | "
             f"HP {item.hp_bonus:+} | "
             f"Min DMG {item.min_dmg_bonus:+} | "
             f"Max DMG {item.max_dmg_bonus:+}")
-            if st.button(f"Equip {item.name}", key=f"equip_{i}"):
+            if st.button(f"Equip {item_name}", key=f"equip_{i}"):
                 old_item = player.equipment[item.slot]
                 player.equip(item)
                 if old_item:
@@ -243,18 +266,24 @@ elif st.session_state.screen == "sell":
         st.write("You have nothing to sell")
     else:
         for i,item in enumerate(player.inventory):
+            item_name = item.name
+            if item.enhancement >0:
+                item_name += f" +{item.enhancement}"
             st.write(
-                f"{item.name} | "
+                f"{item_name} | "
                 f"HP {item.hp_bonus:+} | "
                 f"Min DMG {item.min_dmg_bonus:+} | "
                 f"Max DMG {item.max_dmg_bonus:+} | "
                 f"Value: {item.value}g | "
                 f"Sell: {item.value//2}g")
-            if st.button(f"Sell {item.name}", key=f"sell_{i}"):
+            if st.button(f"Sell {item_name}", key=f"sell_{i}"):
                 player.gold += item.value//2
                 sold_item = player.inventory.pop(i)
+                sold_item_name = sold_item.name
+                if sold_item.enhancement >0:
+                    sold_item_name += f' +{sold_item.enhancement}'
                 st.session_state.shop_message = (
-                    f"Sold {sold_item.name} for {sold_item.value//2} gold.")
+                    f"Sold {sold_item_name} for {sold_item.value//2} gold.")
                 st.rerun()
     if st.button("Return to Shop"):
         st.session_state.screen = "shop"
@@ -296,7 +325,9 @@ elif st.session_state.screen == "trainer":
     st.write(
         f"Current Signature Move: "
         f"{player.signature if player.signature else 'None'}")
-    if st.button("Learn Reckoning (100g)"):
+    st.subheader("Reckoning - 100g")
+    st.write("Deliver divine judgment upon your foe. Instantly purges Demons and Undead. Cooldown: 6 turns")
+    if st.button("Learn Reckoning"):
         if player.signature == "Reckoning":
             st.error("You already know Reckoning.")
         elif player.gold >=100:
@@ -306,7 +337,9 @@ elif st.session_state.screen == "trainer":
             st.rerun()
         else:
             st.error("You don't have enough gold.")
-    if st.button("Learn Bloodlust (125g)"):
+    st.subheader("Bloodlust - 125g")
+    st.write("Deal double damage and restore 50% of damage dealt as HP. Cooldown: 5 turns")
+    if st.button("Learn Bloodlust"):
         if player.signature == "Bloodlust":
             st.error("You already know Bloodlust.")
         elif player.gold >= 125:
@@ -316,7 +349,9 @@ elif st.session_state.screen == "trainer":
             st.rerun()
         else:
             st.error("You don't have enough gold.")
-    if st.button("Learn Rejuvenation (100g)"):
+    st.subheader("Rejuvenation - 100g")
+    st.write("Restore 70% of your maximum hp. Cooldown: 5 turns")
+    if st.button("Learn Rejuvenation"):
         if player.signature == "Rejuvenation":
             st.error("You already know Rejuvenation.")
         elif player.gold >= 100:
@@ -326,6 +361,82 @@ elif st.session_state.screen == "trainer":
             st.rerun()
         else:
             st.error("You don't have enough gold.")
+    if st.button("Return to Town"):
+        st.session_state.screen = "town"
+        st.rerun()
+
+elif st.session_state.screen == "blacksmith":
+    st.header("Blacksmith")
+    if "blacksmith_message" in st.session_state:
+        st.success(st.session_state.blacksmith_message)
+        del st.session_state.blacksmith_message
+    st.write("I can upgrade your equipment. What would you like?")
+    st.write(f"Current Gold: {player.gold}g")
+    st.subheader("Equipped Gear")
+    equipped_items = [item for item in player.equipment.values() if item]
+    if not equipped_items:
+        st.write("No equipment equipped.")
+    else:
+        for slot, item in player.equipment.items():
+            if item:
+                item_name = item.name
+                if item.enhancement > 0:
+                    item_name += f" +{item.enhancement}"
+                cost = (item.enhancement + 1) * 25
+                st.write(
+                    f"{slot}: {item_name} | "
+                    f"HP {item.hp_bonus:+} | "
+                    f"Min DMG {item.min_dmg_bonus:+} | "
+                    f"Max DMG {item.max_dmg_bonus:+}")
+                if item.enhancement < 50:
+                    if st.button(f"Upgrade {item_name} ({cost}g)", key=f"upgrade_equipped_{slot}"):
+                        if player.gold < cost:
+                            st.error("You don't have enough gold.")
+                        else:
+                            player.gold -= cost
+                            upgraded_item = create_enhanced_item(get_item_by_name(item.name),item.enhancement + 1)
+                            old_name = item_name
+                            new_name = upgraded_item.name
+                            if upgraded_item.enhancement > 0:
+                                new_name += f" +{upgraded_item.enhancement}"
+                            player.equip(upgraded_item)
+                            st.session_state.blacksmith_message = (f"{old_name} has been upgraded to {new_name}!")
+                            st.rerun()
+                else:
+                    st.write("Maximum enhancement reached.")
+    
+    st.subheader("Inventory")
+    if not player.inventory:
+        st.write("Your inventory is empty.")
+    else:
+        for i, item in enumerate(player.inventory):
+            item_name = item.name
+            if item.enhancement > 0:
+                item_name += f" +{item.enhancement}"
+            cost = (item.enhancement + 1) * 25
+            st.write(
+                f"{item_name} | "
+                f"HP {item.hp_bonus:+} | "
+                f"Min DMG {item.min_dmg_bonus:+} | "
+                f"Max DMG {item.max_dmg_bonus:+}"
+            )
+            if item.enhancement < 50:
+                if st.button(f"Upgrade {item_name} ({cost}g)",key=f"upgrade_inventory_{i}"):
+                    if player.gold < cost:
+                        st.error("You don't have enough gold.")
+                    else:
+                        player.gold -= cost
+                        upgraded_item = create_enhanced_item(get_item_by_name(item.name),item.enhancement + 1)
+                        old_name = item_name
+                        new_name = upgraded_item.name
+                        if upgraded_item.enhancement > 0:
+                            new_name += f" +{upgraded_item.enhancement}"
+                        player.inventory[i] = upgraded_item
+                        st.session_state.blacksmith_message = (f"{old_name} has been upgraded to {new_name}!")
+                        st.rerun()
+            else:
+                st.write("Maximum enhancement reached.")
+
     if st.button("Return to Town"):
         st.session_state.screen = "town"
         st.rerun()
@@ -462,7 +573,10 @@ elif st.session_state.screen == "dungeon":
             if loot == "Healing potion":
                 st.write(f"The {mob.name} dropped a Healing Potion!")
             else:
-                st.write(f"The {mob.name} dropped a {loot.name}!")
+                loot_name = loot.name
+                if loot.enhancement>0:
+                    loot_name += f' +{loot.enhancement}'
+                st.write(f"The {mob.name} dropped a {loot_name}!")
         if "level_message" in st.session_state:
             st.success(st.session_state.level_message)
         if st.button("Continue"):

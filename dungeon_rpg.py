@@ -16,7 +16,7 @@ CLASS_DATA = {
                 "ability": "Power Strike",
                 "cooldown": 4,
                 "ability_desc": "Doubles attack damage",
-                "ability_effect": lambda x : x * 2,
+                "ability_effect": lambda x, player : x * 2,
                 "crit_chance": 0.05,
                 "class_desc": "A seasoned fighter with high health and reliable damage"},
   "Mage" : {"hp": -10,
@@ -25,8 +25,8 @@ CLASS_DATA = {
               "potions":3,
               "ability": "Fireball",
               "cooldown": 3,
-              "ability_desc": "Adds 15 damage to attack",
-              "ability_effect": lambda x : x + 15,
+              "ability_desc": "Adds damage to attack based on level",
+              "ability_effect": lambda x, player : x + 15 + (player.level-1)*4,
               "crit_chance": 0.12,
               "class_desc": "A fragile spellcaster who relies on powerful magic"},
   "Rogue" : {"hp": 0,
@@ -36,7 +36,7 @@ CLASS_DATA = {
               "ability": "Knife Throw",
               "cooldown": 3,
               "ability_desc": "Doubles attack damage and adds 5",
-              "ability_effect": lambda x : x*2 + 5,
+              "ability_effect": lambda x, player : x*2 + 5,
               "crit_chance": 0.2,
               "class_desc": "A nimble assassin who excels at critical strikes"},
   "Paladin" : {"hp": 30,
@@ -45,8 +45,8 @@ CLASS_DATA = {
             "potions":2,
             "ability": "Smite",
             "cooldown": 2,
-            "ability_desc": "Adds 10 damage to attack",
-            "ability_effect": lambda x : x + 10,
+            "ability_desc": "Adds damage to attack based on level",
+            "ability_effect": lambda x, player : x + 10 +(player.level-1)*3,
             "crit_chance": 0.09,
             "class_desc": "A holy warrior with exceptional durability"},
     "Commoner" : {"hp": -10,
@@ -56,7 +56,7 @@ CLASS_DATA = {
                 "ability": "Throw Rock",
                 "cooldown": 4,
                 "ability_desc": "Adds 2 damage to attack",
-                "ability_effect": lambda x : x + 2,
+                "ability_effect": lambda x, player : x + 2,
                 "crit_chance": 0.01,
                 "class_desc": "An ordinary person who made several bad decisions and somehow ended up in a dungeon"},
 }
@@ -166,7 +166,7 @@ class Character:
     if self.special_cooldown > 0:
         return None
     damage, crit = self.attack()
-    damage = self.ability_effect(damage)
+    damage = self.ability_effect(damage, self)
     mob.hp -= damage
     self.special_cooldown = self.ability_cooldown
     return damage, crit
@@ -252,13 +252,14 @@ class Mob:
 
 #Equipment
 class Item:
-  def __init__(self, name, slot, hp_bonus=0, min_dmg_bonus=0, max_dmg_bonus=0,value=5):
+  def __init__(self, name, slot, hp_bonus=0, min_dmg_bonus=0, max_dmg_bonus=0,value=5, enhancement=0):
     self.name = name
     self.slot = slot
     self.hp_bonus = hp_bonus
     self.min_dmg_bonus = min_dmg_bonus
     self.max_dmg_bonus = max_dmg_bonus
     self.value = value
+    self.enhancement = enhancement
 
 """#Combat Functions"""
 
@@ -270,10 +271,10 @@ def handle_victory(player, mob, difficulty):
     # Boss bonus
     if difficulty % 5 == 0:
         gold_found *= 2
-        loot = Loot_Drop("boss")
+        loot = Loot_Drop("boss",difficulty)
         player.run_stats["boss_kills"] += 1
     else:
-      loot = Loot_Drop("basic")
+      loot = Loot_Drop("basic", difficulty)
     if loot:
         player.run_stats["items_found"] += 1
         if loot == "Healing potion":
@@ -299,15 +300,17 @@ monsters = [
   ("Bandit Archer", 15, 5, 6, 2, "Human"),
   ("Giant Spider", 12, 2, 5, 1, "Beast"),
   ("Boar", 20, 1, 5, 2, "Beast"),
-  ("Lesser Drake", 18, 2, 6, 2, "Dragonkin")
-]
+  ("Lesser Drake", 18, 2, 6, 2, "Dragonkin"),
+  ("Skeleton", 15, 2, 5, 2, "Undead")
+  ]
 bosses = [
     ("Bandit Leader", 45, 4, 7, 4,"Humanoid", "Backstab", lambda x: x*2, 3),
     ("Alpha Wolf", 35, 4, 8, 4, "Beast", "Dire Fang", lambda x: x+10, 4),
     ("Goblin Leader", 35, 2, 8, 4, "Humanoid", "Throw Rock", lambda x: x+5, 3),
     ("Troll", 55, 2, 6, 4, "Humanoid", "Throw Boulder", lambda x: x+20, 5),
     ("Baby Dragon", 60, 3, 10, 5, "Dragonkin", "Fire Breath", lambda x: x*3 - 5, 4),
-    ("Giant Python", 60, 7, 15, 10, "Beast", "Constrict", lambda x: x*2 + 2, 3)
+    ("Giant Python", 60, 7, 15, 10, "Beast", "Constrict", lambda x: x*2 + 2, 3),
+    ("Lesser Fiend", 50, 6, 10, 8, "Demon", "Shadow Strike", lambda x: x+15)
   ]
 def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
   monster = random.choice(monsters)
@@ -354,18 +357,31 @@ shop_loot_table = [
   Item("Leather Shirt", "Chest", hp_bonus=15, value=30),
   Item("Leather Boots", "Boots", hp_bonus=5, value=15),
   Item("Steel Longblade", "Weapon", min_dmg_bonus=10, max_dmg_bonus=20, value= 250)
-]
-def Loot_Drop(loot_type):
+  ]
+def Loot_Drop(loot_type, floor):
   if loot_type == "basic":
     random_num = random.random()
     if random_num < 0.25:
-      return random.choice(basic_loot_table)
+      return enhance_item(random.choice(basic_loot_table), floor)
     elif random_num < 0.5:
       return "Healing potion"
   
   elif loot_type =="boss":
-    return random.choice(boss_loot_table)
+    return enhance_item(random.choice(boss_loot_table),floor)
   return None
+
+def enhance_item(item,floor):
+  min_bonus = floor//10
+  max_bonus = min_bonus*2 + 2
+  enhancement = random.randint(min_bonus,max_bonus)
+  return Item(
+    item.name,
+    item.slot,
+    hp_bonus=item.hp_bonus + (enhancement * 5),
+    min_dmg_bonus=item.min_dmg_bonus + enhancement,
+    max_dmg_bonus=item.max_dmg_bonus + (enhancement * 2),
+    value=item.value + (enhancement * 5),
+    enhancement=enhancement)
 
 #Save Game
 def save_game(player):
@@ -382,16 +398,14 @@ def save_game(player):
         "signature": player.signature,
         "signature_cd": player.signature_cd,
         "equipment": {
-            slot: item.name if item else None
-            for slot, item in player.equipment.items()
-        },
-        "inventory": [item.name for item in player.inventory]
+            slot: {"name": item.name, "enhancement": item.enhancement} if item else None
+            for slot, item in player.equipment.items()},
+        "inventory": [ {"name": item.name,"enhancement": item.enhancement} for item in player.inventory]
     }
 
 #Load Game
 def load_game(uploaded_file):
   return json.load(uploaded_file)
-
 
 #Item lookup
 def get_item_by_name(name):
@@ -400,6 +414,16 @@ def get_item_by_name(name):
             return item
     return None
 
+def create_enhanced_item(base_item, enhancement):
+    return Item(
+        base_item.name,
+        base_item.slot,
+        hp_bonus=base_item.hp_bonus + (enhancement * 5),
+        min_dmg_bonus=base_item.min_dmg_bonus + enhancement,
+        max_dmg_bonus=base_item.max_dmg_bonus + (enhancement * 2),
+        value=base_item.value+(enhancement * 5),
+        enhancement=enhancement
+    )
 
 def get_unlocked_floors(highest_floor):
     unlocked = [1]
