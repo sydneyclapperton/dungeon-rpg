@@ -226,6 +226,7 @@ class Mob:
     self.name = name
     self.mob_type = mob_type
     self.hp = hp
+    self.max_hp = hp
     self.min_damage = min_damage
     self.max_damage = max_damage
     self.xp_reward = xp_reward
@@ -310,7 +311,7 @@ bosses = [
     ("Troll", 55, 2, 6, 4, "Humanoid", "Throw Boulder", lambda x: x+20, 5),
     ("Baby Dragon", 60, 3, 10, 5, "Dragonkin", "Fire Breath", lambda x: x*3 - 5, 4),
     ("Giant Python", 60, 7, 15, 10, "Beast", "Constrict", lambda x: x*2 + 2, 3),
-    ("Lesser Fiend", 50, 6, 10, 8, "Demon", "Shadow Strike", lambda x: x+15)
+    ("Lesser Fiend", 50, 6, 10, 8, "Demon", "Shadow Strike", lambda x: x+15, 4)
   ]
 def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
   monster = random.choice(monsters)

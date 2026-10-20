@@ -454,15 +454,22 @@ elif st.session_state.screen == "dungeon":
         else:
             st.session_state.mob = Spawn_Mob(st.session_state.floor)
     mob = st.session_state.mob
-    st.subheader("Combat Log")
-    if not st.session_state.combat_log:
-        st.write(f"A {mob.name} appears!")
-    else:
-        for entry in st.session_state.combat_log[-5:]:
-            st.write(entry)
     if mob.hp > 0 and player.hp > 0:
-        st.write(f"{mob.name} HP: {max(0, mob.hp)}")
-        
+        top_col1, top_col2 = st.columns(2)
+        with top_col1:
+            st.write(player.name)
+            st.caption(f"{player.hp}/{player.max_hp}")
+            st.progress(player.hp / player.max_hp)
+        with top_col2:
+            st.write(mob.name)
+            st.caption(f"{mob.hp}/{mob.max_hp}")
+            st.progress(mob.hp / mob.max_hp)
+        st.subheader("Combat Log")
+        if not st.session_state.combat_log:
+            st.write(f"A {mob.name} appears!")
+        else:
+            for entry in st.session_state.combat_log[-5:]:
+                st.write(entry)
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Attack"):
