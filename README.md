@@ -62,6 +62,10 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Equipment swapping
 - Inventory management
 - Item selling system
+- Item enhancement system
+- Item enhancements scale based on dungeon depth
+- Enhanced items provide increased stats and value
+- Enhanced items persist through save/load
 
 ### Progression & Economy
 
@@ -71,6 +75,8 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Shop system
 - Potion purchasing
 - Item selling
+- Blacksmith equipment upgrades
+- Enhancement costs scale with item level
 - Inn for healing and recovery
 - Highest Floor Cleared tracking
 - Unlockable checkpoint progression
@@ -86,7 +92,7 @@ Current Signature Moves:
   - Deal double damage and heal for 50% of damage dealt
 - Reckoning
   - Heavy damage attack
-  - Instantly destroys Demons and Undead
+  - Instantly purges Demons and Undead
 
 ### Save & Load System
 
@@ -104,6 +110,7 @@ Current Signature Moves:
   - Run statistics
   - Learned Signature Move
   - Signature cooldown state
+  - Item enhancement data
 - Works on desktop and mobile devices
 - No account required
 
@@ -124,11 +131,19 @@ Current Signature Moves:
 - Shop
 - Sell equipment
 - Inn
+- Blacksmith
 - Inventory management
 - Trainer
 - Dungeon floor selection
 - Save game
 - Retire character
+
+### Blacksmith
+
+- Upgrade equipped items and inventory gear
+- Increase item enhancement levels
+- Upgrade costs scale with enhancement level
+- Enhanced items gain additional stats and value
 
 ---
 
@@ -144,6 +159,7 @@ Current bosses include:
 - Troll
 - Baby Dragon
 - Giant Python
+- Lesser Fiend
 
 Bosses feature:
 
@@ -151,6 +167,21 @@ Bosses feature:
 - Unique combat abilities
 - Bonus rewards
 - Guaranteed boss loot
+
+---
+
+## Monster Types
+
+Current monster families include:
+
+- Humanoids
+- Beasts
+- Demons
+- Undead
+
+Special interactions:
+
+- Reckoning instantly purges Demons and Undead
 
 ---
 
@@ -177,4 +208,6 @@ Bosses feature:
 - Achievements and records
 - Monster artwork
 - Random dungeon events
-- Additional monster families (Undead, Constructs, Elementals)
+- Quest system
+- Multiple dungeon regions
+- Dungeon-specific loot tables
