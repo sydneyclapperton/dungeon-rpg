@@ -458,7 +458,7 @@ elif st.session_state.screen == "dungeon":
         if st.session_state.floor % 5 ==0:
             st.session_state.mob = Spawn_Boss(st.session_state.floor)
         else:
-            if random.random() <.99:
+            if random.random() <.1:
                 event = trigger_event(player, st.session_state.floor)
                 st.session_state.current_event = event
                 st.session_state.screen = "event"
