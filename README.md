@@ -36,18 +36,51 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Healing potion system
 - Enemy abilities and cooldowns
 - Combat log displaying battle events
+- Visual HP bars for player and enemy health
 
 ### Dungeon System
 
 - Multi-floor dungeon progression
 - Enemy scaling based on floor level
 - Random monster encounters
+- Elite monster encounters
 - Boss encounters every 5 floors
 - Boss-specific abilities
 - Boss reward bonuses
+- Random dungeon events
+- Treasure chest encounters
+- Healing fountain encounters
+- Shrine encounters
+- Trap encounters
 - Floor checkpoint system
 - Unlockable starting floors
 - Progress persists between saves
+
+## Random Dungeon Events
+
+Dungeon exploration may trigger special events instead of combat.
+
+Current events include:
+
+- Treasure Chest
+  - Open the chest for a reward or leave it untouched
+  - Possible rewards include gold, potions, and equipment
+  - Rare trapped chests may deal damage
+
+- Healing Fountain
+  - Restore 50% of your maximum health
+  - May be ignored if healing is not needed
+
+- Shrine
+  - Choose one blessing:
+    - Gold
+    - Experience
+    - Full healing
+    - Equipment enhancement
+
+- Trap
+  - Attempt to dodge the trap or brace for impact
+  - Rogues automatically detect and avoid traps
 
 ### Loot & Equipment
 
@@ -59,6 +92,8 @@ Players create a character, choose a class, and venture into an increasingly dan
   - Chest
   - Boots
 - Equipment grants stat bonuses
+- Elite-specific loot table
+- Increased rewards from elite enemies
 - Equipment swapping
 - Inventory management
 - Item selling system
@@ -80,70 +115,6 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Inn for healing and recovery
 - Highest Floor Cleared tracking
 - Unlockable checkpoint progression
-
-### Trainer System
-
-Unlocks at Level 10.
-Players can visit the Trainer to learn powerful Signature Moves. Only one Signature Move can be known at a time, but abilities may be retrained for gold.
-Current Signature Moves:
-- Rejuvenation
-  - Restore 70% of maximum HP
-- Bloodlust
-  - Deal double damage and heal for 50% of damage dealt
-- Reckoning
-  - Heavy damage attack
-  - Instantly purges Demons and Undead
-
-### Save & Load System
-
-- Downloadable save files
-- Upload save files to continue existing characters
-- Save data includes:
-  - Character information
-  - Level and XP
-  - Current HP
-  - Gold
-  - Potions
-  - Equipped gear
-  - Inventory contents
-  - Highest floor cleared
-  - Run statistics
-  - Learned Signature Move
-  - Signature cooldown state
-  - Item enhancement data
-- Works on desktop and mobile devices
-- No account required
-
-### Run Tracking
-
-- Dungeon run statistics
-- Monsters defeated
-- Bosses defeated
-- XP earned
-- Gold earned
-- Items found
-- Career Summary upon retirement
-- Life Summary upon death
-- Highest cleared floor
-
-### Town Hub
-
-- Shop
-- Sell equipment
-- Inn
-- Blacksmith
-- Inventory management
-- Trainer
-- Dungeon floor selection
-- Save game
-- Retire character
-
-### Blacksmith
-
-- Upgrade equipped items and inventory gear
-- Increase item enhancement levels
-- Upgrade costs scale with enhancement level
-- Enhanced items gain additional stats and value
 
 ---
 
@@ -185,6 +156,89 @@ Special interactions:
 
 ---
 
+## Elite Monsters
+
+Some dungeon encounters may spawn Elite Monsters.
+
+Elite Monsters feature:
+
+- Increased health
+- Increased damage
+- Increased XP rewards
+- Increased gold rewards
+- Elite-specific loot drops
+
+Elite kills are tracked in run statistics and summaries.
+
+---
+
+### Town Hub
+
+- Shop
+- Sell equipment
+- Inn
+- Blacksmith
+- Inventory management
+- Trainer
+- Dungeon floor selection
+- Save game
+- Retire character
+
+### Blacksmith
+
+- Upgrade equipped items and inventory gear
+- Increase item enhancement levels
+- Upgrade costs scale with enhancement level
+- Enhanced items gain additional stats and value
+
+### Trainer System
+
+Unlocks at Level 10.
+Players can visit the Trainer to learn powerful Signature Moves. Only one Signature Move can be known at a time, but abilities may be retrained for gold.
+Current Signature Moves:
+- Rejuvenation
+  - Restore 70% of maximum HP
+- Bloodlust
+  - Deal double damage and heal for 50% of damage dealt
+- Reckoning
+  - Heavy damage attack
+  - Instantly purges Demons and Undead
+
+### Save & Load System
+
+- Downloadable save files
+- Upload save files to continue existing characters
+- Save data includes:
+  - Character information
+  - Level and XP
+  - Current HP
+  - Gold
+  - Potions
+  - Equipped gear
+  - Inventory contents
+  - Highest floor cleared
+  - Run statistics
+  - Learned Signature Move
+  - Signature cooldown state
+  - Item enhancement data
+- Works on desktop and mobile devices
+- No account required
+
+### Run Tracking
+
+- Dungeon run statistics
+- Monsters defeated
+- Elite monsters defeated
+- Bosses defeated
+- XP earned
+- Gold earned
+- Items found
+- Career Summary upon retirement
+- Life Summary upon death
+- Highest cleared floor
+
+---
+
 ## Technologies Used
 
 - Python 3
@@ -204,10 +258,8 @@ Special interactions:
 - Additional equipment sets
 - Loot rarity system
 - Status effects (Poison, Burn, Stun, etc.)
-- Elite enemies
 - Achievements and records
 - Monster artwork
-- Random dungeon events
 - Quest system
 - Multiple dungeon regions
 - Dungeon-specific loot tables
