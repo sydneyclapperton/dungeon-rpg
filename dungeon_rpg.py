@@ -434,7 +434,7 @@ def load_game(uploaded_file):
 
 #Item lookup
 def get_item_by_name(name):
-    for item in basic_loot_table + boss_loot_table + shop_loot_table:
+    for item in basic_loot_table + elite_loot_table + boss_loot_table + shop_loot_table:
         if item.name == name:
             return item
     return None
