@@ -97,6 +97,7 @@ class Character:
     self.highest_floor = 1
     self.run_stats = {
       "kills": 0,
+      "elite_kills":0,
       "boss_kills": 0,
       "xp_earned": 0,
       "gold_earned": 0,
@@ -274,6 +275,10 @@ def handle_victory(player, mob, difficulty):
         gold_found *= 2
         loot = Loot_Drop("boss",difficulty)
         player.run_stats["boss_kills"] += 1
+    elif getattr(mob, "is_elite", False):
+        gold_found *= 2
+        loot = Loot_Drop("elite",difficulty)
+        player.run_stats["elite_kills"] += 1
     else:
       loot = Loot_Drop("basic", difficulty)
     if loot:
@@ -315,12 +320,22 @@ bosses = [
   ]
 def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
   monster = random.choice(monsters)
-  return Mob(monster[0],
+  mob = Mob(monster[0],
       monster[1] + (difficulty-1) * 4,
       monster[2] + (difficulty-1),
       monster[3] + (difficulty-1) * 2,
       monster[4] + (difficulty-1),
       monster[5])
+  mob.is_elite = False
+  if random.random() < 0.1:
+      mob.is_elite = True
+      mob.name = f"Elite {mob.name}"
+      mob.max_hp *= 2
+      mob.hp = mob.max_hp
+      mob.min_damage += difficulty // 2
+      mob.max_damage += difficulty
+      mob.xp_reward *= 2
+  return mob
 
 def Spawn_Boss(difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
   boss = random.choice(bosses)
@@ -351,6 +366,11 @@ boss_loot_table= [
         Item("Dragonscale Shirt", "Chest", hp_bonus=20),
         Item("Dragonscale Boots", "Boots", hp_bonus=10)
     ]
+elite_loot_table =[
+        Item("Iron Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=5),
+        Item("Iron Helmet", "Helmet", hp_bonus=7),
+        Item("Iron Breastplate", "Chest", hp_bonus=17),
+        Item("Iron Boots", "Boots", hp_bonus=7)]
 shop_loot_table = [
   Item("Bronze Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=5, value=25),
   Item("Magic Wand", "Weapon", min_dmg_bonus=1, max_dmg_bonus=8, value=25),
@@ -366,7 +386,11 @@ def Loot_Drop(loot_type, floor):
       return enhance_item(random.choice(basic_loot_table), floor)
     elif random_num < 0.5:
       return "Healing potion"
-  
+  elif loot_type =="elite":
+    if random.random() < .7:
+      return enhance_item(random.choice(elite_loot_table),floor)
+    else:
+      return "Healing potion"
   elif loot_type =="boss":
     return enhance_item(random.choice(boss_loot_table),floor)
   return None

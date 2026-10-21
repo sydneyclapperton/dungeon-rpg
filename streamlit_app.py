@@ -83,10 +83,12 @@ if st.session_state.screen == "char_creation":
         player.signature_cd = save_data.get("signature_cd", 0)
         player.run_stats = save_data.get("run_stats", {"kills": 0,
             "boss_kills": 0,
+            "elite_kills": 0,
             "xp_earned": 0,
             "gold_earned": 0,
             "items_found": 0
         })
+        player.run_stats.setdefault("elite_kills", 0)
         for slot, item_data in save_data.get("equipment", {}).items():
             if isinstance(item_data, str):
                 item = get_item_by_name(item_data)
@@ -171,7 +173,9 @@ elif st.session_state.screen == "retired":
     stats = player.run_stats
     st.header("Career Summary")
     st.write(f"Level: {player.level}")
+    st.write(f"Highest Floor Cleared: {player.highest_floor}")
     st.write(f"Monsters Defeated: {stats['kills']}")
+    st.write(f"Elite Monsters Defeated: {stats['elite_kills']}")
     st.write(f"Bosses Defeated: {stats['boss_kills']}")
     st.write(f"XP Earned: {stats['xp_earned']}")
     st.write(f"Gold Earned: {stats['gold_earned']}")
@@ -454,6 +458,8 @@ elif st.session_state.screen == "dungeon":
         else:
             st.session_state.mob = Spawn_Mob(st.session_state.floor)
     mob = st.session_state.mob
+    if getattr(mob, "is_elite", False):
+        st.warning(f"Elite Monster: {mob.name}!")
     if mob.hp > 0 and player.hp > 0:
         top_col1, top_col2 = st.columns(2)
         with top_col1:
@@ -620,7 +626,9 @@ elif st.session_state.screen == "dungeon":
         stats = player.run_stats
         st.header("Life Summary")
         st.write(f"Level: {player.level}")
+        st.write(f"Highest Floor Cleared: {player.highest_floor}")
         st.write(f"Monsters Defeated: {stats['kills']}")
+        st.write(f"Elite Monsters Defeated: {stats['elite_kills']}")
         st.write(f"Bosses Defeated: {stats['boss_kills']}")
         st.write(f"XP Earned: {stats['xp_earned']}")
         st.write(f"Gold Earned: {stats['gold_earned']}")
