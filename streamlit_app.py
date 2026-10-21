@@ -1,8 +1,10 @@
 import streamlit as st
 import json
+import random
 from dungeon_rpg import (CLASS_DATA, Character, Spawn_Mob, 
     handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name, shop_loot_table,
     get_unlocked_floors, create_enhanced_item)
+from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
 st.title("Dungeon RPG")
 
 def process_victory(player, mob, floor):
@@ -456,7 +458,13 @@ elif st.session_state.screen == "dungeon":
         if st.session_state.floor % 5 ==0:
             st.session_state.mob = Spawn_Boss(st.session_state.floor)
         else:
-            st.session_state.mob = Spawn_Mob(st.session_state.floor)
+            if random.random() <.99:
+                event = trigger_event(player, st.session_state.floor)
+                st.session_state.current_event = event
+                st.session_state.screen = "event"
+                st.rerun()
+            else:
+                st.session_state.mob = Spawn_Mob(st.session_state.floor)
     mob = st.session_state.mob
     if getattr(mob, "is_elite", False):
         st.warning(f"Elite Monster: {mob.name}!")
@@ -649,3 +657,28 @@ elif st.session_state.screen == "dungeon":
             st.session_state.floor = 1
             st.session_state.screen = "char_creation"
             st.rerun()
+
+elif st.session_state.screen == "event":
+    event = st.session_state.current_event
+    if not event:
+        st.session_state.screen = "dungeon"
+        st.rerun()
+    st.header(event['title'])
+    if "event_result" in st.session_state:
+        st.write(st.session_state.event_result)
+        if st.button("Continue"):
+            del st.session_state.current_event
+            del st.session_state.event_result
+            st.session_state.mob = Spawn_Mob(st.session_state.floor)
+            st.session_state.screen = "dungeon"
+            st.rerun()
+    else:
+        st.write(event['message'])
+        if event['type'] == 'treasure':
+            treasure_event(player,st.session_state.floor)
+        elif event['type']=="healing_fountain":
+            healing_fountain_event(player)
+        elif event['type'] =="shrine":
+            shrine_event(player, st.session_state.floor)
+        elif event['type'] =="trap":
+            trap_event(player, st.session_state.floor)
