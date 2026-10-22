@@ -6,7 +6,13 @@ import json
 
 ##Character
 """
-
+#Special ability functions (as needed)
+def berserk(damage, player):
+    hp_loss = max(1, player.max_hp // 5)  # 20%
+    player.hp = max(1, player.hp - hp_loss)
+    missing_hp = player.max_hp - player.hp
+    return damage + missing_hp
+ 
 #Player_Class Creation
 CLASS_DATA = {
   "Warrior" : {"hp": 20,
@@ -49,6 +55,17 @@ CLASS_DATA = {
             "ability_effect": lambda x, player : x + 10 +(player.level-1)*3,
             "crit_chance": 0.09,
             "class_desc": "A holy warrior with exceptional durability"},
+    "Berserker" : {
+            "hp": 40,
+            "min_damage": 2,
+            "max_damage": 5,
+            "potions": 1,
+            "ability": "Berserk",
+            "cooldown": 4,
+            "ability_desc": "Lose 20% max HP and deal bonus damage based on missing HP",
+            "ability_effect": berserk,
+            "crit_chance": 0.15,
+            "class_desc": "A savage warrior who sacrifices health for devastating attacks"},
     "Commoner" : {"hp": -10,
                 "min_damage":0,
                 "max_damage": -1,
@@ -219,6 +236,18 @@ class Character:
           "damage": actual_damage,
           "heal" : healed,
           "instakill": False}
+
+      elif self.signature == "Greed":
+          self.signature_cd = 5
+          damage, crit = self.attack()
+          actual_damage = min(damage, mob.hp)
+          mob.hp -= actual_damage
+          greed_kill = mob.hp <= 0
+          return {
+              "damage": actual_damage,
+              "heal": 0,
+              "instakill": False,
+              "greed_kill": greed_kill}
 
 """##Monster"""
 

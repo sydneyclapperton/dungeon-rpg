@@ -337,6 +337,7 @@ elif st.session_state.screen == "trainer":
     st.write(
         f"Current Signature Move: "
         f"{player.signature if player.signature else 'None'}")
+    
     st.subheader("Reckoning - 100g")
     st.write("Deliver divine judgment upon your foe. Instantly purges Demons and Undead. Cooldown: 6 turns")
     if st.button("Learn Reckoning"):
@@ -349,6 +350,7 @@ elif st.session_state.screen == "trainer":
             st.rerun()
         else:
             st.error("You don't have enough gold.")
+    
     st.subheader("Bloodlust - 125g")
     st.write("Deal double damage and restore 50% of damage dealt as HP. Cooldown: 5 turns")
     if st.button("Learn Bloodlust"):
@@ -361,6 +363,7 @@ elif st.session_state.screen == "trainer":
             st.rerun()
         else:
             st.error("You don't have enough gold.")
+    
     st.subheader("Rejuvenation - 100g")
     st.write("Restore 70% of your maximum hp. Cooldown: 5 turns")
     if st.button("Learn Rejuvenation"):
@@ -373,6 +376,20 @@ elif st.session_state.screen == "trainer":
             st.rerun()
         else:
             st.error("You don't have enough gold.")
+    
+    st.subheader("Greed - 125g")
+    st.write("Deal normal damage. If Greed kills the target, gain 50 bonus Gold and 25 bonus XP. Cooldown: 5 turns")
+    if st.button("Learn Greed"):
+        if player.signature == "Greed":
+            st.error("You already know Greed.")
+        elif player.gold >= 125:
+            player.gold -= 125
+            player.signature = "Greed"
+            st.session_state.trainer_message = "You learned Greed!"
+            st.rerun()
+        else:
+            st.error("You don't have enough gold.")
+    
     if st.button("Return to Town"):
         st.session_state.screen = "town"
         st.rerun()
@@ -538,7 +555,6 @@ elif st.session_state.screen == "dungeon":
                 else:
                     st.session_state.combat_log.append(f"You hit the {mob.name} for {damage} damage.")
                 if mob.hp <= 0:
-                    st.session_state.combat_log.append(f"You defeated the {mob.name}.")
                     process_victory(player,mob,st.session_state.floor)
                 else:
                     base_damage = mob.attack()
@@ -589,8 +605,12 @@ elif st.session_state.screen == "dungeon":
                             st.session_state.combat_log.append(f"You healed {result['heal']} HP using {player.signature}!")
                         if result['instakill']:
                             st.session_state.combat_log.append(f"{player.signature} destroyed the {mob.name}!")
-                        if mob.hp  <= 0:
-                            st.session_state.combat_log.append(f"You defeated the {mob.name}.")
+                        if result.get("greed_kill", False):
+                            player.gold += 50
+                            player.xp += 25
+                            player.run_stats["xp_earned"] += 25
+                            player.level_up()
+                            st.session_state.greed_bonus={"gold":50,"xp":25}
                             process_victory(player,mob,st.session_state.floor)
                         else:
                             base_damage = mob.attack()
@@ -627,11 +647,14 @@ elif st.session_state.screen == "dungeon":
 
     elif mob.hp <=0 and player.hp > 0:
         st.subheader("Victory!")
+        st.success(f"You defeated the {mob.name}!")
         player.highest_floor = max(player.highest_floor, st.session_state.floor)
         if st.session_state.floor % 5 == 0:
             st.success("Boss Defeated!")
         st.write(f"You gained {st.session_state.xp_gained} XP.")
         st.write(f"You found {st.session_state.gold_found} gold.")
+        if "greed_bonus" in st.session_state:
+            st.success(f"Greed Bonus: +{st.session_state.greed_bonus['gold']} Gold, +{st.session_state.greed_bonus['xp']} XP")
         if "loot_found" in st.session_state:
             loot = st.session_state.loot_found
             if loot == "Healing potion":
@@ -655,6 +678,8 @@ elif st.session_state.screen == "dungeon":
             del st.session_state.mob
             if "xp_gained" in st.session_state:
                 del st.session_state.xp_gained
+            if "greed_bonus" in st.session_state:
+                del st.session_state.greed_bonus
             st.rerun()
             
         if st.button("Return to Town"):
@@ -668,6 +693,8 @@ elif st.session_state.screen == "dungeon":
             del st.session_state.mob
             if "xp_gained" in st.session_state:
                 del st.session_state.xp_gained
+            if "greed_bonus" in st.session_state:
+                del st.session_state.greed_bonus
             st.session_state.floor = 1
             st.session_state.screen = "town"
             st.rerun()
