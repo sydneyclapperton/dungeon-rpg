@@ -92,6 +92,7 @@ Current events include:
   - Helmet
   - Chest
   - Boots
+  - Ring
 - Equipment grants stat bonuses
 - Elite-specific loot table
 - Increased rewards from elite enemies
@@ -135,6 +136,7 @@ Current bosses include:
 - Baby Dragon
 - Giant Python
 - Lesser Fiend
+- Lich
 
 Bosses feature:
 
