@@ -75,6 +75,7 @@ class Character:
     self.max_damage = 6
     self.healing_potions = 1
     self.inventory = []
+    self.active_quests = []
     self.equipment = {
       "Weapon": None,
       "Helmet": None,
@@ -125,17 +126,17 @@ class Character:
     self.hp = min(self.hp, self.max_hp)
 
   def level_up(self):
-    xp_needed = self.level * 10
-    if self.xp >= xp_needed:
+    leveled = False
+    while self.xp >= self.level * 10:
+      xp_needed = self.level * 10
       self.level += 1
       self.min_damage += 2
       self.max_damage += 3
       self.max_hp += 10
       self.hp = self.max_hp
       self.xp -= xp_needed
-      return True
-    else:
-      return False
+      leveled = True
+    return leveled
 
   def view_stats(self):
     signature_text = ""
@@ -422,6 +423,7 @@ def save_game(player):
         "run_stats": player.run_stats,
         "signature": player.signature,
         "signature_cd": player.signature_cd,
+        "active_quests": player.active_quests,
         "equipment": {
             slot: {"name": item.name, "enhancement": item.enhancement} if item else None
             for slot, item in player.equipment.items()},

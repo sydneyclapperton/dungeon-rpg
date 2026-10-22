@@ -5,6 +5,7 @@ from dungeon_rpg import (CLASS_DATA, Character, Spawn_Mob,
     handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name, shop_loot_table,
     get_unlocked_floors, create_enhanced_item)
 from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
+import quests 
 st.title("Dungeon RPG")
 
 def process_victory(player, mob, floor):
@@ -91,6 +92,7 @@ if st.session_state.screen == "char_creation":
             "items_found": 0
         })
         player.run_stats.setdefault("elite_kills", 0)
+        player.active_quests = save_data.get("active_quests",[])
         for slot, item_data in save_data.get("equipment", {}).items():
             if isinstance(item_data, str):
                 item = get_item_by_name(item_data)
@@ -148,6 +150,10 @@ elif st.session_state.screen == "town":
             st.rerun()
 
     with col2:
+        if st.button("Quest Board"):
+            st.session_state.screen = "quest_board"
+            st.rerun()
+        
         with st.popover("Dungeon"):
             if len(unlocked_floors) > 1:
                 selected_floor = st.radio("Choose Starting Floor", unlocked_floors,horizontal=True)
@@ -443,6 +449,43 @@ elif st.session_state.screen == "blacksmith":
             else:
                 st.write("Maximum enhancement reached.")
 
+    if st.button("Return to Town"):
+        st.session_state.screen = "town"
+        st.rerun()
+
+elif st.session_state.screen == "quest_board":
+    if "quest_board" not in st.session_state:
+        st.session_state.quest_board = quests.get_available_quests()
+    st.header("Quest Board")
+    MAX_ACTIVE_QUESTS = 3
+    for quest in st.session_state.quest_board:
+        with st.container(border=True):
+            st.subheader(quest["name"])
+            st.write(quest["description"])
+            reward = (f"{quest['reward_amount']} {quest['reward_type']}")
+            st.write(f"Reward: {reward}")
+            active_quest = next((q for q in player.active_quests if q["name"] == quest["name"]),None)
+            # Quest not accepted
+            if active_quest is None:
+                if len(player.active_quests) >= MAX_ACTIVE_QUESTS:
+                    st.info("Maximum active quests reached.")
+                elif st.button(f"Accept {quest['name']}"):
+                    player.active_quests.append(quests.accept_quest(player, quest))
+                    st.rerun()
+            # Quest accepted
+            else:
+                progress = quests.get_quest_progress(player, active_quest)
+                st.write(f"Progress: {min(progress, active_quest['goal'])}/{active_quest['goal']}")
+                if quests.is_quest_complete(player, active_quest):
+                    st.success("Quest Complete!")
+                    if st.button(f"Turn In {quest['name']}"):
+                        quests.grant_quest_reward(player, active_quest)
+                        player.active_quests.remove(active_quest)
+                        available = [q for q in quests.quest_pool if q["name"] not in [board_quest["name"]for board_quest in st.session_state.quest_board]]
+                        if available:
+                            index = (st.session_state.quest_board.index(quest))
+                            st.session_state.quest_board[index] = (random.choice(available))
+                        st.rerun()
     if st.button("Return to Town"):
         st.session_state.screen = "town"
         st.rerun()
