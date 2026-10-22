@@ -14,11 +14,12 @@ Players create a character, choose a class, and venture into an increasingly dan
 
 - Create a custom character
 - Choose a character name and class
-- Five playable classes:
+- Six playable classes:
   - Warrior
   - Mage
   - Rogue
   - Paladin
+  - Berserker
   - Commoner
 - Class-specific combat abilities
 - Character leveling system
@@ -113,6 +114,9 @@ Current events include:
 - Blacksmith equipment upgrades
 - Enhancement costs scale with item level
 - Inn for healing and recovery
+- Quest system
+- Quest rewards
+- Quest Board with rotating objectives
 - Highest Floor Cleared tracking
 - Unlockable checkpoint progression
 
@@ -180,6 +184,7 @@ Elite kills are tracked in run statistics and summaries.
 - Blacksmith
 - Inventory management
 - Trainer
+- Quest Board
 - Dungeon floor selection
 - Save game
 - Retire character
@@ -203,6 +208,44 @@ Current Signature Moves:
 - Reckoning
   - Heavy damage attack
   - Instantly purges Demons and Undead
+- Greed
+  - Deal normal damage
+  - Killing blows grant bonus Gold and XP
+
+### Quest System
+
+Players can visit the Quest Board in town to accept challenges for additional rewards.
+
+Features include:
+
+- Rotating quest board
+- Up to 3 active quests at a time
+- Progress tracked from quest acceptance
+- Turn-in system for completed quests
+- Gold and XP quest rewards
+
+Current quest types include:
+
+- Monster Hunter
+  - Defeat monsters
+
+- Elite Hunter
+  - Defeat elite monsters
+
+- Boss Slayer
+  - Defeat bosses
+
+- Boss Hunter
+  - Defeat multiple bosses
+
+- Deep Delver
+  - Reach deeper dungeon floors
+
+- Gold Hoarder
+  - Earn gold
+
+- Treasure Seeker
+  - Find equipment and loot
 
 ### Save & Load System
 
@@ -221,6 +264,8 @@ Current Signature Moves:
   - Learned Signature Move
   - Signature cooldown state
   - Item enhancement data
+  - Active quests
+  - Quest board data
 - Works on desktop and mobile devices
 - No account required
 
@@ -257,9 +302,9 @@ Current Signature Moves:
 - Expanded boss mechanics
 - Additional equipment sets
 - Loot rarity system
+- Additional Quests
 - Status effects (Poison, Burn, Stun, etc.)
 - Achievements and records
 - Monster artwork
-- Quest system
 - Multiple dungeon regions
 - Dungeon-specific loot tables
