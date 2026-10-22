@@ -603,15 +603,18 @@ elif st.session_state.screen == "dungeon":
                             st.session_state.combat_log.append(f"You dealt {result['damage']} damage using {player.signature}!")
                         if result['heal'] > 0:
                             st.session_state.combat_log.append(f"You healed {result['heal']} HP using {player.signature}!")
-                        if result['instakill']:
-                            st.session_state.combat_log.append(f"{player.signature} destroyed the {mob.name}!")
                         if result.get("greed_kill", False):
                             player.gold += 50
                             player.xp += 25
                             player.run_stats["xp_earned"] += 25
-                            player.level_up()
+                            leveled = player.level_up()
+                            if leveled:
+                                st.session_state.level_message = (f"{player.name} reached level {player.level}!")
                             st.session_state.greed_bonus={"gold":50,"xp":25}
-                            process_victory(player,mob,st.session_state.floor)
+                        if result['instakill']:
+                            st.session_state.combat_log.append(f"{player.signature} destroyed the {mob.name}!")
+                        if mob.hp <= 0:
+                            process_victory(player, mob, st.session_state.floor)
                         else:
                             base_damage = mob.attack()
                             enemy_damage = mob.use_ability(base_damage)
