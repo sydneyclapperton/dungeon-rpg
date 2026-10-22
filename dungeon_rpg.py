@@ -97,7 +97,8 @@ class Character:
       "Weapon": None,
       "Helmet": None,
       "Chest": None,
-      "Boots": None
+      "Boots": None,
+      "Ring" : None
       }
     self.gold = 0
     class_bonus = CLASS_DATA.get(player_class, {})
@@ -272,14 +273,14 @@ class Mob:
     if self.cooldown > 0:
         self.cooldown -= 1
 
-  def use_ability(self,target):
+  def use_ability(self,damage):
     if self.ability_effect is None:
       return None
     elif self.cooldown > 0:
       return None
     else:
       self.cooldown = self.ability_cooldown
-      return self.ability_effect(target)
+      return self.ability_effect(damage, self)
 """##Items"""
 
 #Equipment
@@ -339,15 +340,23 @@ monsters = [
   ("Lesser Drake", 18, 2, 6, 2, "Dragonkin"),
   ("Skeleton", 15, 2, 5, 2, "Undead")
   ]
+
+#Boss abilities (as needed)
+def life_drain(damage,mob):
+    heal_amount = damage // 2
+    mob.hp = min(mob.hp + heal_amount, mob.max_hp)
+    return damage
 bosses = [
-    ("Bandit Leader", 45, 4, 7, 4,"Humanoid", "Backstab", lambda x: x*2, 3),
-    ("Alpha Wolf", 35, 4, 8, 4, "Beast", "Dire Fang", lambda x: x+10, 4),
-    ("Goblin Leader", 35, 2, 8, 4, "Humanoid", "Throw Rock", lambda x: x+5, 3),
-    ("Troll", 55, 2, 6, 4, "Humanoid", "Throw Boulder", lambda x: x+20, 5),
-    ("Baby Dragon", 60, 3, 10, 5, "Dragonkin", "Fire Breath", lambda x: x*3 - 5, 4),
-    ("Giant Python", 60, 7, 15, 10, "Beast", "Constrict", lambda x: x*2 + 2, 3),
-    ("Lesser Fiend", 50, 6, 10, 8, "Demon", "Shadow Strike", lambda x: x+15, 4)
+    ("Bandit Leader", 45, 4, 7, 4,"Humanoid", "Backstab", lambda x, mob: x*2, 3),
+    ("Alpha Wolf", 35, 4, 8, 4, "Beast", "Dire Fang", lambda x, mob: x+10, 4),
+    ("Goblin Leader", 35, 2, 8, 4, "Humanoid", "Throw Rock", lambda x, mob: x+5, 3),
+    ("Troll", 55, 2, 6, 4, "Humanoid", "Throw Boulder", lambda x, mob: x+20, 5),
+    ("Baby Dragon", 60, 3, 10, 5, "Dragonkin", "Fire Breath", lambda x, mob: x*3 - 5, 4),
+    ("Giant Python", 60, 7, 14, 10, "Beast", "Constrict", lambda x, mob: x*2 + 2, 3),
+    ("Lesser Fiend", 50, 6, 10, 8, "Demon", "Shadow Strike", lambda x, mob: x+15, 4),
+    ("Lich", 55, 3, 7, 10, "Undead", "Life Drain", life_drain, 3)
   ]
+
 def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
   monster = random.choice(monsters)
   mob = Mob(monster[0],
@@ -387,14 +396,19 @@ basic_loot_table = [
         Item("Mocassins", "Boots", hp_bonus=1),
         Item("Used Wizard Robes", "Chest", hp_bonus = -5, min_dmg_bonus= 1, max_dmg_bonus=3),
         Item("Smelly Leather Shoes", "Boots", hp_bonus = 5, min_dmg_bonus= -1),
-        Item("Bucket", "Helmet", hp_bonus = 10, min_dmg_bonus =-1, max_dmg_bonus = -3)
+        Item("Bucket", "Helmet", hp_bonus = 10, min_dmg_bonus =-1, max_dmg_bonus = -3),
+        Item("Bronze Axe", "Weapon", hp_bonus = 0, min_dmg_bonus = 3, max_dmg_bonus = 5),
+        Item("Bronze Dagger","Weapon", hp_bonus = 0, min_dmg_bonus =1, max_dmg_bonus=7)
     ]
 boss_loot_table= [
-        Item("Dragon Tooth", "Weapon", min_dmg_bonus=4, max_dmg_bonus=7),
-        Item("Flaming Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=10),
-        Item("Dragonscale Helmet", "Helmet", hp_bonus=10),
-        Item("Dragonscale Shirt", "Chest", hp_bonus=20),
-        Item("Dragonscale Boots", "Boots", hp_bonus=10)
+        Item("Dragon Tooth", "Weapon", min_dmg_bonus=4, max_dmg_bonus=7,value=20),
+        Item("Flaming Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=10,value=20),
+        Item("Dragonscale Helmet", "Helmet", hp_bonus=10,value=20),
+        Item("Dragonscale Shirt", "Chest", hp_bonus=20,value=20),
+        Item("Dragonscale Boots", "Boots", hp_bonus=10,value=20),
+        Item("Ring of Power", "Ring", max_dmg_bonus=10,value=20),
+        Item("Ring of Vitality", "Ring", hp_bonus=20,value=20),
+        Item("Ring of Dexterity", "Ring", min_dmg_bonus=3, max_dmg_bonus=5,value=20)
     ]
 elite_loot_table =[
         Item("Iron Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=5),
@@ -409,6 +423,7 @@ shop_loot_table = [
   Item("Leather Boots", "Boots", hp_bonus=5, value=15),
   Item("Steel Longblade", "Weapon", min_dmg_bonus=10, max_dmg_bonus=20, value= 250)
   ]
+
 def Loot_Drop(loot_type, floor):
   if loot_type == "basic":
     random_num = random.random()
