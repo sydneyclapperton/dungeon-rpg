@@ -351,8 +351,8 @@ bosses = [
     ("Alpha Wolf", 35, 4, 8, 4, "Beast", "Dire Fang", lambda x, mob: x+10, 4),
     ("Goblin Leader", 35, 2, 8, 4, "Humanoid", "Throw Rock", lambda x, mob: x+5, 3),
     ("Troll", 55, 2, 6, 4, "Humanoid", "Throw Boulder", lambda x, mob: x+20, 5),
-    ("Baby Dragon", 60, 3, 10, 5, "Dragonkin", "Fire Breath", lambda x, mob: x*3 - 5, 4),
-    ("Giant Python", 60, 7, 14, 10, "Beast", "Constrict", lambda x, mob: x*2 + 2, 3),
+    ("Baby Dragon", 60, 3, 10, 8, "Dragonkin", "Fire Breath", lambda x, mob: x*3 - 5, 4),
+    ("Giant Python", 60, 7, 14, 10, "Beast", "Constrict", lambda x, mob: x*2, 3),
     ("Lesser Fiend", 50, 6, 10, 8, "Demon", "Shadow Strike", lambda x, mob: x+15, 4),
     ("Lich", 55, 3, 7, 10, "Undead", "Life Drain", life_drain, 3)
   ]
@@ -406,30 +406,35 @@ boss_loot_table= [
         Item("Dragonscale Helmet", "Helmet", hp_bonus=10,value=20),
         Item("Dragonscale Shirt", "Chest", hp_bonus=20,value=20),
         Item("Dragonscale Boots", "Boots", hp_bonus=10,value=20),
-        Item("Ring of Power", "Ring", max_dmg_bonus=10,value=20),
-        Item("Ring of Vitality", "Ring", hp_bonus=20,value=20),
-        Item("Ring of Dexterity", "Ring", min_dmg_bonus=3, max_dmg_bonus=5,value=20)
+        Item("Ring of Power", "Ring", max_dmg_bonus=10,value=30),
+        Item("Ring of Vitality", "Ring", hp_bonus=20,value=30),
+        Item("Ring of Dexterity", "Ring", min_dmg_bonus=3, max_dmg_bonus=5, value=30),
+        Item("Dragon Ring", "Ring", hp_bonus=15, min_dmg_bonus=4, max_dmg_bonus=8, value=50),
+        Item("Cursed Ring","Ring", hp_bonus=-20, max_dmg_bonus= 15, value=30)
     ]
 elite_loot_table =[
-        Item("Iron Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=5),
-        Item("Iron Helmet", "Helmet", hp_bonus=7),
-        Item("Iron Breastplate", "Chest", hp_bonus=17),
-        Item("Iron Boots", "Boots", hp_bonus=7)]
+        Item("Iron Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=5, value=15),
+        Item("Iron Helmet", "Helmet", hp_bonus=7, value=15),
+        Item("Iron Breastplate", "Chest", hp_bonus=17, value=15),
+        Item("Iron Boots", "Boots", hp_bonus=7, value=15)]
 shop_loot_table = [
   Item("Bronze Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=5, value=25),
   Item("Magic Wand", "Weapon", min_dmg_bonus=1, max_dmg_bonus=8, value=25),
   Item("Leather Cap", "Helmet", hp_bonus=5, value=15),
   Item("Leather Shirt", "Chest", hp_bonus=15, value=30),
   Item("Leather Boots", "Boots", hp_bonus=5, value=15),
+  Item("Warhammer", "Weapon", min_dmg_bonus=6, max_dmg_bonus=6, value= 75),
+  Item("Traveler's Boots", "Boots", hp_bonus=8, min_dmg_bonus=2, value=60),
+  Item("Chainmail", "Chest", hp_bonus=20, value=150),
   Item("Steel Longblade", "Weapon", min_dmg_bonus=10, max_dmg_bonus=20, value= 250)
   ]
 
 def Loot_Drop(loot_type, floor):
   if loot_type == "basic":
     random_num = random.random()
-    if random_num < 0.25:
+    if random_num < 0.20:
       return enhance_item(random.choice(basic_loot_table), floor)
-    elif random_num < 0.5:
+    elif random_num < 0.45:
       return "Healing potion"
   elif loot_type =="elite":
     if random.random() < .7:

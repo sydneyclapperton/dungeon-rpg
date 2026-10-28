@@ -18,7 +18,7 @@ quest_pool =[{
     },
     {
     "name": "Boss Slayer",
-    "description": "Defeat 1 bosses.",
+    "description": "Defeat 1 boss.",
     "target": "boss_kills",
     "goal": 1,
     "reward_type": "XP",
@@ -55,6 +55,22 @@ quest_pool =[{
     "goal": 5,
     "reward_type": "Gold",
     "reward_amount": 150
+    },
+    {
+    "name": "Rich Adventurer",
+    "description": "Earn 1000 gold.",
+    "target": "gold_earned",
+    "goal": 1000,
+    "reward_type": "XP",
+    "reward_amount": 100
+    },
+    {
+    "name": "Boss Exterminator",
+    "description": "Defeat 5 bosses.",
+    "target": "boss_kills",
+    "goal": 5,
+    "reward_type": "XP",
+    "reward_amount": 250
     }
 ]
 
