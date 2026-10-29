@@ -36,6 +36,7 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Signature Move system
 - Healing potion system
 - Enemy abilities and cooldowns
+- Enemy trait system
 - Combat log displaying battle events
 - Visual HP bars for player and enemy health
 
@@ -45,6 +46,7 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Enemy scaling based on floor level
 - Random monster encounters
 - Elite monster encounters
+- Random monster traits
 - Boss encounters every 5 floors
 - Boss-specific abilities
 - Boss reward bonuses
@@ -155,6 +157,7 @@ Current monster families include:
 - Beasts
 - Demons
 - Undead
+- Dragonkin
 
 Special interactions:
 
@@ -175,6 +178,25 @@ Elite Monsters feature:
 - Elite-specific loot drops
 
 Elite kills are tracked in run statistics and summaries.
+
+---
+
+## Monster Traits
+
+Some monsters may spawn with special traits, creating more dangerous or rewarding encounters.
+
+Current traits include:
+
+- Enraged
+  - Increased damage
+
+- Tough
+  - Increased health
+
+- Rich
+  - Increased gold rewards
+
+Traits can also appear on Elite Monsters.
 
 ---
 
@@ -300,13 +322,15 @@ Current quest types include:
 
 - Additional character classes
 - More monsters and bosses
+- Multiple dungeon regions
+- Environmental dungeon effects
 - Additional Signature Moves
 - Expanded boss mechanics
 - Additional equipment sets
 - Loot rarity system
 - Additional Quests
+- Town Expansion
 - Status effects (Poison, Burn, Stun, etc.)
 - Achievements and records
 - Monster artwork
-- Multiple dungeon regions
 - Dungeon-specific loot tables
