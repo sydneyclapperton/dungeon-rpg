@@ -76,7 +76,7 @@ CLASS_DATA = {
                 "ability_effect": lambda x, player : x + 2,
                 "crit_chance": 0.01,
                 "class_desc": "An ordinary person who made several bad decisions and somehow ended up in a dungeon"},
-}
+  }
 
 #Object Creation
 #Character
@@ -318,6 +318,7 @@ def handle_victory(player, mob, difficulty):
             player.healing_potions += 1
         else:
             player.inventory.append(loot)
+    gold_found = int(gold_found*getattr(mob, "gold_mult", 1))
     player.gold += gold_found
     player.run_stats["xp_earned"] += mob.xp_reward
     player.run_stats["gold_earned"] += gold_found
@@ -340,7 +341,23 @@ monsters = [
   ("Lesser Drake", 18, 2, 6, 2, "Dragonkin"),
   ("Skeleton", 15, 2, 5, 2, "Undead")
   ]
-
+TRAITS = {
+    "Enraged": {
+        "hp_mult": 1,
+        "damage_mult": 1.5,
+        "gold_mult": 1
+    },
+    "Tough": {
+        "hp_mult": 1.5,
+        "damage_mult": 1,
+        "gold_mult": 1
+    },
+    "Rich": {
+        "hp_mult": 1,
+        "damage_mult": 1,
+        "gold_mult": 2.0
+    }
+  }
 #Boss abilities (as needed)
 def life_drain(damage,mob):
     heal_amount = damage // 2
@@ -366,6 +383,16 @@ def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_
       monster[4] + (difficulty-1),
       monster[5])
   mob.is_elite = False
+  if random.random() < 0.12:
+    trait_name = random.choice(list(TRAITS.keys()))
+    trait = TRAITS[trait_name]
+    mob.trait = trait_name
+    mob.name = f"{trait_name} {mob.name}"
+    mob.max_hp = int(mob.max_hp * trait["hp_mult"])
+    mob.hp = mob.max_hp
+    mob.min_damage = int(mob.min_damage * trait["damage_mult"])
+    mob.max_damage = int(mob.max_damage * trait["damage_mult"])
+    mob.gold_mult = trait["gold_mult"]
   if random.random() < 0.1:
       mob.is_elite = True
       mob.name = f"Elite {mob.name}"
