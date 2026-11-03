@@ -3,7 +3,7 @@ import json
 import random
 from dungeon_rpg import (CLASS_DATA, Character, Spawn_Mob, 
     handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name, shop_loot_table,
-    get_unlocked_floors, create_enhanced_item)
+    get_unlocked_floors, create_enhanced_item, enemy_turn)
 from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
 import quests 
 st.title("Dungeon RPG")
@@ -557,15 +557,7 @@ elif st.session_state.screen == "dungeon":
                 if mob.hp <= 0:
                     process_victory(player,mob,st.session_state.floor)
                 else:
-                    base_damage = mob.attack()
-                    enemy_damage = mob.use_ability(base_damage)
-                    if enemy_damage is None:
-                        enemy_damage = base_damage
-                        st.session_state.combat_log.append(f"The {mob.name} hit you for {enemy_damage} damage.")
-                        mob.reduce_cooldown()
-                    else:
-                        st.session_state.combat_log.append(f"The {mob.name} used {mob.ability_name}! It dealt {enemy_damage} damage.")
-                    player.hp -= enemy_damage
+                    st.session_state.combat_log.append(enemy_turn(player, mob))
                 st.rerun()
             
             if st.button(f"{player.special_ability} (CD: {player.special_cooldown})"):
@@ -582,15 +574,7 @@ elif st.session_state.screen == "dungeon":
                         st.session_state.combat_log.append(f"You defeated the {mob.name}.")
                         process_victory(player,mob,st.session_state.floor)
                     else:
-                        base_damage = mob.attack()
-                        enemy_damage = mob.use_ability(base_damage)
-                        if enemy_damage is None:
-                            enemy_damage = base_damage
-                            st.session_state.combat_log.append(f"The {mob.name} hit you for {enemy_damage} damage.")
-                            mob.reduce_cooldown()
-                        else:
-                            st.session_state.combat_log.append(f"The {mob.name} used {mob.ability_name}! It dealt {enemy_damage} damage.")
-                        player.hp -= enemy_damage
+                        st.session_state.combat_log.append(enemy_turn(player, mob))
                     st.rerun()
             
             if player.signature:
@@ -616,16 +600,7 @@ elif st.session_state.screen == "dungeon":
                         if mob.hp <= 0:
                             process_victory(player, mob, st.session_state.floor)
                         else:
-                            base_damage = mob.attack()
-                            enemy_damage = mob.use_ability(base_damage)
-                            if enemy_damage is None:
-                                enemy_damage = base_damage
-                                st.session_state.combat_log.append(f"The {mob.name} hit you for {enemy_damage} damage.")
-                                mob.reduce_cooldown()
-                            else:
-                                st.session_state.combat_log.append(
-                                    f"The {mob.name} used {mob.ability_name}! It dealt {enemy_damage} damage.")
-                            player.hp -= enemy_damage
+                            st.session_state.combat_log.append(enemy_turn(player, mob))
                         st.rerun()                            
                 
         with col2:
@@ -634,19 +609,14 @@ elif st.session_state.screen == "dungeon":
                     healed = player.use_potion()
                     player.reduce_cooldown()
                     st.session_state.combat_log.append(f"You regained {healed} HP.")
-                    if mob.hp > 0:
-                        base_damage = mob.attack()
-                        enemy_damage = mob.use_ability(base_damage)
-                        if enemy_damage is None:
-                            enemy_damage = base_damage
-                            st.session_state.combat_log.append(f"The {mob.name} hit you for {enemy_damage} damage.")
-                            mob.reduce_cooldown()
-                        else:
-                            st.session_state.combat_log.append(f"The {mob.name} used {mob.ability_name}! It dealt {enemy_damage} damage.")
-                        player.hp -= enemy_damage
-                    st.rerun()
+                    if mob.hp <= 0:
+                        process_victory(player, mob, st.session_state.floor)
+                    else:
+                        st.session_state.combat_log.append(enemy_turn(player, mob)) 
+                    st.rerun()     
                 else:
                     st.error("You have no potions!")
+                
 
     elif mob.hp <=0 and player.hp > 0:
         st.subheader("Victory!")

@@ -12,7 +12,10 @@ def berserk(damage, player):
     player.hp = max(1, player.hp - hp_loss)
     missing_hp = player.max_hp - player.hp
     return damage + missing_hp
- 
+def snipe(damage, player):
+    player.skip_enemy_turn = True
+    return player.max_damage
+
 #Player_Class Creation
 CLASS_DATA = {
   "Warrior" : {"hp": 20,
@@ -50,7 +53,7 @@ CLASS_DATA = {
             "max_damage":2,
             "potions":2,
             "ability": "Smite",
-            "cooldown": 2,
+            "cooldown": 3,
             "ability_desc": "Adds damage to attack based on level",
             "ability_effect": lambda x, player : x + 10 +(player.level-1)*3,
             "crit_chance": 0.09,
@@ -66,6 +69,17 @@ CLASS_DATA = {
             "ability_effect": berserk,
             "crit_chance": 0.15,
             "class_desc": "A savage warrior who sacrifices health for devastating attacks"},
+    "Ranger" : {
+            "hp": 0,
+            "min_damage": 2,
+            "max_damage": 4,
+            "potions": 1,
+            "ability": "Snipe",
+            "cooldown": 3,
+            "ability_desc": "Deal maximum damage and prevent enemy retaliation",
+            "ability_effect": snipe,
+            "crit_chance": 0.15,
+            "class_desc": "A skilled hunter who specializes in precision attacks and keeping enemies at a distance"},    
     "Commoner" : {"hp": -10,
                 "min_damage":0,
                 "max_damage": -1,
@@ -123,6 +137,7 @@ class Character:
       "items_found": 0}
     self.signature = None
     self.signature_cd = 0
+    self.skip_enemy_turn = False
 
   def attack(self):
     damage = random.randint(self.min_damage, self.max_damage)
@@ -327,6 +342,20 @@ def handle_victory(player, mob, difficulty):
         "gold_found": gold_found,
         "loot": loot,
         "leveled_up": leveled_up}
+
+def enemy_turn(player, mob):   # Handles all enemy retaliation after player actions
+    if player.skip_enemy_turn:
+        player.skip_enemy_turn = False
+        return "You keep your distance and avoid retaliation!"
+    base_damage = mob.attack()
+    enemy_damage = mob.use_ability(base_damage)
+    if enemy_damage is None:
+        enemy_damage = base_damage
+        mob.reduce_cooldown()
+        player.hp -= enemy_damage
+        return f"The {mob.name} hit you for {enemy_damage} damage."
+    player.hp -= enemy_damage
+    return (f"The {mob.name} used {mob.ability_name}! It dealt {enemy_damage} damage.")
 
 """#Monster and Loot Tables"""
 monsters = [
