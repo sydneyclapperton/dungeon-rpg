@@ -112,7 +112,8 @@ class Character:
       "Helmet": None,
       "Chest": None,
       "Boots": None,
-      "Ring" : None
+      "Ring" : None,
+      "Necklace": None
       }
     self.gold = 0
     class_bonus = CLASS_DATA.get(player_class, {})
@@ -127,6 +128,8 @@ class Character:
     self.ability_cooldown = class_bonus.get("cooldown", 0)
     self.special_cooldown = 0
     self.crit_chance = class_bonus.get("crit_chance", 0)
+    self.cd_bonus = 0
+    self.crit_bonus = 0
     self.highest_floor = 1
     self.run_stats = {
       "kills": 0,
@@ -152,10 +155,14 @@ class Character:
       self.max_hp -= old_item.hp_bonus
       self.min_damage -= old_item.min_dmg_bonus
       self.max_damage -= old_item.max_dmg_bonus
+      self.cd_bonus -= old_item.cd_bonus
+      self.crit_chance -= old_item.crit_bonus
     self.equipment[item.slot] = item
     self.max_hp += item.hp_bonus
     self.min_damage += item.min_dmg_bonus
     self.max_damage += item.max_dmg_bonus
+    self.cd_bonus += item.cd_bonus
+    self.crit_chance += item.crit_bonus
     self.hp = min(self.hp, self.max_hp)
 
   def level_up(self):
@@ -183,7 +190,8 @@ class Character:
           f"Current XP: {self.xp}/{self.level*10}\n\n"
           f"Highest Floor Cleared: {self.highest_floor}\n\n"
           f"HP: {self.hp}/{self.max_hp}\n"
-          f"Damage: {self.min_damage}-{self.max_damage}\n\n"
+          f"Damage: {self.min_damage}-{self.max_damage}\n"
+          f"Crit Chance: {self.crit_chance:.0%}\n\n"
           f"Gold: {self.gold}\n"
           f"Potions: {self.healing_potions}\n"
           )
@@ -203,7 +211,7 @@ class Character:
     damage, crit = self.attack()
     damage = self.ability_effect(damage, self)
     mob.hp -= damage
-    self.special_cooldown = self.ability_cooldown
+    self.special_cooldown = max(1, self.ability_cooldown - self.cd_bonus)
     return damage, crit
 
   def reduce_cooldown(self):
@@ -216,7 +224,7 @@ class Character:
       if self.signature_cd > 0:
         return None
       elif self.signature == "Rejuvenation":
-        self.signature_cd = 5
+        self.signature_cd = max(1, 5 - self.cd_bonus)
         heal_amount = int(self.max_hp*.7)
         self.hp = min(self.hp+heal_amount, self.max_hp)
         return {
@@ -225,7 +233,7 @@ class Character:
           "instakill": False}
       
       elif self.signature == "Reckoning":
-        self.signature_cd = 6
+        self.signature_cd = max(1, 6 - self.cd_bonus)
         if mob.mob_type in ["Demon", "Undead"]:
           mob.hp = 0
           return {
@@ -242,7 +250,7 @@ class Character:
           "instakill": False}
 
       elif self.signature == "Bloodlust":
-        self.signature_cd = 5
+        self.signature_cd = max(1, 5 - self.cd_bonus)
         damage, crit = self.attack()
         actual_damage = min(damage*2, mob.hp)
         healed = int(actual_damage/2)
@@ -254,7 +262,7 @@ class Character:
           "instakill": False}
 
       elif self.signature == "Greed":
-          self.signature_cd = 5
+          self.signature_cd = max(1, 5 - self.cd_bonus)
           damage, crit = self.attack()
           actual_damage = min(damage, mob.hp)
           mob.hp -= actual_damage
@@ -300,14 +308,17 @@ class Mob:
 
 #Equipment
 class Item:
-  def __init__(self, name, slot, hp_bonus=0, min_dmg_bonus=0, max_dmg_bonus=0,value=5, enhancement=0):
+  def __init__(self, name, slot, hp_bonus=0, min_dmg_bonus=0, max_dmg_bonus=0,value=5, enhancement=0, cd_bonus = 0, crit_bonus=0):
     self.name = name
     self.slot = slot
     self.hp_bonus = hp_bonus
     self.min_dmg_bonus = min_dmg_bonus
     self.max_dmg_bonus = max_dmg_bonus
     self.value = value
+    self.cd_bonus = cd_bonus
+    self.crit_bonus = crit_bonus
     self.enhancement = enhancement
+
 
 """#Combat Functions"""
 
@@ -317,7 +328,11 @@ def handle_victory(player, mob, difficulty):
     gold_found = random.randint(1+(difficulty-1), 3*difficulty)
     player.run_stats["kills"] += 1
     # Boss bonus
-    if difficulty % 5 == 0:
+    if difficulty == 50:
+      loot = Loot_Drop("final_boss",0)
+      gold_found = 200
+      player.run_stats["boss_kills"] += 1
+    elif difficulty % 5 == 0:
         gold_found *= 2
         loot = Loot_Drop("boss",difficulty)
         player.run_stats["boss_kills"] += 1
@@ -355,6 +370,16 @@ def enemy_turn(player, mob):   # Handles all enemy retaliation after player acti
         player.hp -= enemy_damage
         return f"The {mob.name} hit you for {enemy_damage} damage."
     player.hp -= enemy_damage
+    if mob.ability_name == "Static Charge":
+      return (
+          f"The {mob.name} used Static Charge! "
+          f"It dealt {enemy_damage} damage and grew stronger."
+      )
+    elif mob.ability_name == "Dragon Fury":
+      return (
+        f"The {mob.name} used Dragon Fury! "
+        f"It dealt {enemy_damage} damage and grew enraged!"
+      )
     return (f"The {mob.name} used {mob.ability_name}! It dealt {enemy_damage} damage.")
 
 """#Monster and Loot Tables"""
@@ -385,6 +410,11 @@ TRAITS = {
         "hp_mult": 1,
         "damage_mult": 1,
         "gold_mult": 2.0
+    },
+    "Hulking": {
+        "hp_mult": 2.0,
+        "damage_mult": 1.5,
+        "gold_mult": 2.0
     }
   }
 #Boss abilities (as needed)
@@ -392,6 +422,15 @@ def life_drain(damage,mob):
     heal_amount = damage // 2
     mob.hp = min(mob.hp + heal_amount, mob.max_hp)
     return damage
+def static_charge(damage,mob):
+    mob.min_damage += 4
+    mob.max_damage += 6
+    return damage
+def dragon_fury(damage,mob):
+  mob.min_damage += 10
+  mob.max_damage += 15
+  return damage * 2
+
 bosses = [
     ("Bandit Leader", 45, 4, 7, 4,"Humanoid", "Backstab", lambda x, mob: x*2, 3),
     ("Alpha Wolf", 35, 4, 8, 4, "Beast", "Dire Fang", lambda x, mob: x+10, 4),
@@ -400,7 +439,8 @@ bosses = [
     ("Baby Dragon", 60, 3, 10, 8, "Dragonkin", "Fire Breath", lambda x, mob: x*3 - 5, 4),
     ("Giant Python", 60, 7, 14, 10, "Beast", "Constrict", lambda x, mob: x*2, 3),
     ("Lesser Fiend", 50, 6, 10, 8, "Demon", "Shadow Strike", lambda x, mob: x+15, 4),
-    ("Lich", 55, 3, 7, 10, "Undead", "Life Drain", life_drain, 3)
+    ("Lich", 55, 3, 7, 10, "Undead", "Life Drain", life_drain, 3),
+    ("Storm Elemental", 50, 3, 8, 10, "Elemental", "Static Charge", static_charge, 2)
   ]
 
 def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
@@ -436,13 +476,16 @@ def Spawn_Boss(difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_
   boss = random.choice(bosses)
   return Mob(boss[0],
       boss[1] + (difficulty-1) * 5,
-      boss[2] + (difficulty-1) * 2,
-      boss[3] + (difficulty-1) * 3,
+      boss[2] + (difficulty-1) ,
+      boss[3] + (difficulty-1) * 2,
       boss[4] + (difficulty-1),
       boss[5],
       boss[6],
       boss[7],
       boss[8])
+
+def Spawn_Final_Boss():
+  return Mob("Ancient Dragon", 600, 40, 50, 200, "Dragonkin", "Dragon Fury", dragon_fury,3)
 #Loot tables
 basic_loot_table = [
         Item("Sharp Stick", "Weapon", min_dmg_bonus=1),
@@ -468,6 +511,10 @@ boss_loot_table= [
         Item("Dragon Ring", "Ring", hp_bonus=15, min_dmg_bonus=4, max_dmg_bonus=8, value=50),
         Item("Cursed Ring","Ring", hp_bonus=-20, max_dmg_bonus= 15, value=30)
     ]
+final_boss_loot_table=[
+          Item("Swift Pendant","Necklace", value=300, cd_bonus=1),
+          Item("Deadeye Charm","Necklace", value=300, crit_bonus = 0.1)
+          ]
 elite_loot_table =[
         Item("Iron Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=5, value=15),
         Item("Iron Helmet", "Helmet", hp_bonus=7, value=15),
@@ -499,6 +546,8 @@ def Loot_Drop(loot_type, floor):
       return "Healing potion"
   elif loot_type =="boss":
     return enhance_item(random.choice(boss_loot_table),floor)
+  elif loot_type == "final_boss":
+    return random.choice(final_boss_loot_table)
   return None
 
 def enhance_item(item,floor):
@@ -541,7 +590,7 @@ def load_game(uploaded_file):
 
 #Item lookup
 def get_item_by_name(name):
-    for item in basic_loot_table + elite_loot_table + boss_loot_table + shop_loot_table:
+    for item in basic_loot_table + elite_loot_table + boss_loot_table + shop_loot_table + final_boss_loot_table:
         if item.name == name:
             return item
     return None
@@ -555,7 +604,7 @@ def create_enhanced_item(base_item, enhancement):
         max_dmg_bonus=base_item.max_dmg_bonus + (enhancement * 2),
         value=base_item.value+(enhancement * 5),
         enhancement=enhancement
-    )
+      )
 
 def get_unlocked_floors(highest_floor):
     unlocked = [1]

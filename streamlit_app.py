@@ -3,7 +3,7 @@ import json
 import random
 from dungeon_rpg import (CLASS_DATA, Character, Spawn_Mob, 
     handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name, shop_loot_table,
-    get_unlocked_floors, create_enhanced_item, enemy_turn)
+    get_unlocked_floors, create_enhanced_item, enemy_turn, Spawn_Final_Boss)
 from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
 import quests 
 st.title("Dungeon RPG")
@@ -29,9 +29,17 @@ if "player_character" in st.session_state:
         for slot, item in player.equipment.items():
             if item:
                 item_name = item.name
-                if item.enhancement >0:
+                if item.enhancement > 0:
                     item_name += f" +{item.enhancement}"
-                st.write(f"{slot}: {item_name}")
+                effects = []
+                if item.cd_bonus:
+                    effects.append(f"CD -{item.cd_bonus}")
+                if item.crit_bonus:
+                    effects.append(f"Crit +{int(item.crit_bonus * 100)}%")
+                if effects:
+                    st.write(f"{slot}: {item_name} ({', '.join(effects)})")
+                else:
+                    st.write(f"{slot}: {item_name}")
             else:
                 st.write(f"{slot}: None")
                 
@@ -101,7 +109,10 @@ if st.session_state.screen == "char_creation":
             elif item_data:
                 base_item = get_item_by_name(item_data["name"])
                 if base_item:
-                    item = create_enhanced_item(base_item, item_data.get("enhancement", 0))
+                    if base_item.slot == "Necklace":
+                        item = base_item
+                    else:
+                        item = create_enhanced_item(base_item, item_data.get("enhancement", 0))
                     player.equip(item)
         for item_data in save_data.get("inventory", []):
             if isinstance(item_data, str):
@@ -111,7 +122,10 @@ if st.session_state.screen == "char_creation":
             else:
                 base_item = get_item_by_name(item_data["name"])
                 if base_item:
-                    item = create_enhanced_item(base_item,item_data.get("enhancement", 0))
+                    if base_item.slot == "Necklace":
+                        item = base_item
+                    else:
+                        item = create_enhanced_item(base_item,item_data.get("enhancement", 0))
                     player.inventory.append(item)
         player.hp = min(save_data["hp"], player.max_hp)
         st.session_state.player_character = player
@@ -213,10 +227,18 @@ elif st.session_state.screen == "inventory":
             item_name = item.name
             if item.enhancement > 0:
                 item_name += f" +{item.enhancement}"
-            st.write(f"{slot}: {item_name} | "
-            f"HP {item.hp_bonus:+} | "
-            f"Min DMG {item.min_dmg_bonus:+} | "
-            f"Max DMG {item.max_dmg_bonus:+}")
+            stats = []
+            if item.hp_bonus:
+                stats.append(f"HP {item.hp_bonus:+}")
+            if item.min_dmg_bonus:
+                stats.append(f"Min DMG {item.min_dmg_bonus:+}")
+            if item.max_dmg_bonus:
+                stats.append(f"Max DMG {item.max_dmg_bonus:+}")
+            if item.cd_bonus:
+                stats.append(f"Cooldown -{item.cd_bonus}")
+            if item.crit_bonus:
+                stats.append(f"Crit +{int(item.crit_bonus * 100)}%")
+            st.write(f"{item_name} | {' | '.join(stats)}")
         else:
             st.write(f"{slot}: None")
     st.subheader("Inventory")
@@ -227,11 +249,18 @@ elif st.session_state.screen == "inventory":
             item_name = item.name
             if item.enhancement > 0:
                 item_name += f" +{item.enhancement}"
-            st.write(
-            f"{item_name} | "
-            f"HP {item.hp_bonus:+} | "
-            f"Min DMG {item.min_dmg_bonus:+} | "
-            f"Max DMG {item.max_dmg_bonus:+}")
+            stats = []
+            if item.hp_bonus:
+                stats.append(f"HP {item.hp_bonus:+}")
+            if item.min_dmg_bonus:
+                stats.append(f"Min DMG {item.min_dmg_bonus:+}")
+            if item.max_dmg_bonus:
+                stats.append(f"Max DMG {item.max_dmg_bonus:+}")
+            if item.cd_bonus:
+                stats.append(f"Cooldown -{item.cd_bonus}")
+            if item.crit_bonus:
+                stats.append(f"Crit +{int(item.crit_bonus * 100)}%")
+            st.write(f"{item_name} | {' | '.join(stats)}")
             if st.button(f"Equip {item_name}", key=f"equip_{i}"):
                 old_item = player.equipment[item.slot]
                 player.equip(item)
@@ -408,6 +437,8 @@ elif st.session_state.screen == "blacksmith":
     else:
         for slot, item in player.equipment.items():
             if item:
+                if item.slot == "Necklace":
+                    continue
                 item_name = item.name
                 if item.enhancement > 0:
                     item_name += f" +{item.enhancement}"
@@ -439,6 +470,8 @@ elif st.session_state.screen == "blacksmith":
         st.write("Your inventory is empty.")
     else:
         for i, item in enumerate(player.inventory):
+            if item.slot == "Necklace":
+                continue
             item_name = item.name
             if item.enhancement > 0:
                 item_name += f" +{item.enhancement}"
@@ -512,10 +545,14 @@ elif st.session_state.screen == "dungeon":
     if "floor" not in st.session_state:
         st.session_state.floor = 1
     st.header(f"Dungeon - Floor: {st.session_state.floor}")
-    if st.session_state.floor % 5 == 0:
+    if st.session_state.floor == 50:
+        st.warning("You found the Ancient Dragon!")
+    elif st.session_state.floor % 5 == 0:
         st.warning("Boss Floor!")
     if "mob" not in st.session_state:
-        if st.session_state.floor % 5 ==0:
+        if st.session_state.floor == 50:
+            st.session_state.mob = Spawn_Final_Boss()
+        elif st.session_state.floor % 5 ==0:
             st.session_state.mob = Spawn_Boss(st.session_state.floor)
         else:
             if random.random() <.1:
