@@ -57,6 +57,7 @@ CLASS_DATA = {
             "ability_desc": "Adds damage to attack based on level",
             "ability_effect": lambda x, player : x + 10 +(player.level-1)*3,
             "crit_chance": 0.09,
+            "damage_reduction": 0.05,
             "class_desc": "A holy warrior with exceptional durability"},
     "Berserker" : {
             "hp": 40,
@@ -128,6 +129,7 @@ class Character:
     self.ability_cooldown = class_bonus.get("cooldown", 0)
     self.special_cooldown = 0
     self.crit_chance = class_bonus.get("crit_chance", 0)
+    self.damage_reduction = class_bonus.get("damage_reduction",0)
     self.cd_bonus = 0
     self.crit_bonus = 0
     self.highest_floor = 1
@@ -157,6 +159,7 @@ class Character:
       self.max_damage -= old_item.max_dmg_bonus
       self.cd_bonus -= old_item.cd_bonus
       self.crit_chance -= old_item.crit_bonus
+      self.damage_reduction -= old_item.dmg_rd_bonus
     self.equipment[item.slot] = item
     self.max_hp += item.hp_bonus
     self.min_damage += item.min_dmg_bonus
@@ -164,6 +167,7 @@ class Character:
     self.cd_bonus += item.cd_bonus
     self.crit_chance += item.crit_bonus
     self.hp = min(self.hp, self.max_hp)
+    self.damage_reduction += item.dmg_rd_bonus
 
   def level_up(self):
     leveled = False
@@ -182,7 +186,9 @@ class Character:
     signature_text = ""
     if self.signature:
         signature_text = f"Signature Move: {self.signature}\n"
-    
+    damage_reduction_text = "\n"
+    if self.damage_reduction > 0:
+      damage_reduction_text = (f"Damage Reduction: {self.damage_reduction:.0%}\n\n")
     return (f"Name: {self.name}\nClass: {self.player_class}\n"
           f"Level: {self.level}\nAbility: {self.special_ability}\n"
           f"Effect: {self.ability_desc}\n"
@@ -191,7 +197,8 @@ class Character:
           f"Highest Floor Cleared: {self.highest_floor}\n\n"
           f"HP: {self.hp}/{self.max_hp}\n"
           f"Damage: {self.min_damage}-{self.max_damage}\n"
-          f"Crit Chance: {self.crit_chance:.0%}\n\n"
+          f"Crit Chance: {self.crit_chance:.0%}\n"
+          f"{damage_reduction_text}"
           f"Gold: {self.gold}\n"
           f"Potions: {self.healing_potions}\n"
           )
@@ -308,7 +315,7 @@ class Mob:
 
 #Equipment
 class Item:
-  def __init__(self, name, slot, hp_bonus=0, min_dmg_bonus=0, max_dmg_bonus=0,value=5, enhancement=0, cd_bonus = 0, crit_bonus=0):
+  def __init__(self, name, slot, hp_bonus=0, min_dmg_bonus=0, max_dmg_bonus=0,value=5, enhancement=0, cd_bonus = 0, crit_bonus=0, dmg_rd_bonus=0):
     self.name = name
     self.slot = slot
     self.hp_bonus = hp_bonus
@@ -318,6 +325,7 @@ class Item:
     self.cd_bonus = cd_bonus
     self.crit_bonus = crit_bonus
     self.enhancement = enhancement
+    self.dmg_rd_bonus = dmg_rd_bonus
 
 
 """#Combat Functions"""
@@ -359,29 +367,30 @@ def handle_victory(player, mob, difficulty):
         "leveled_up": leveled_up}
 
 def enemy_turn(player, mob):   # Handles all enemy retaliation after player actions
-    if player.skip_enemy_turn:
-        player.skip_enemy_turn = False
-        return "You keep your distance and avoid retaliation!"
-    base_damage = mob.attack()
-    enemy_damage = mob.use_ability(base_damage)
-    if enemy_damage is None:
-        enemy_damage = base_damage
-        mob.reduce_cooldown()
-        player.hp -= enemy_damage
-        return f"The {mob.name} hit you for {enemy_damage} damage."
-    player.hp -= enemy_damage
-    if mob.ability_name == "Static Charge":
+  if player.skip_enemy_turn:
+      player.skip_enemy_turn = False
+      return "You keep your distance and avoid retaliation!"
+  base_damage = mob.attack()
+  enemy_damage = mob.use_ability(base_damage)
+  used_ability = enemy_damage is not None
+  if not used_ability:
+      mob.reduce_cooldown()
+      enemy_damage = base_damage
+  enemy_damage = max(1,int(enemy_damage * (1 - player.damage_reduction)))
+  player.hp -= enemy_damage
+  if not used_ability:
+      return f"The {mob.name} hit you for {enemy_damage} damage."
+  if mob.ability_name == "Static Charge":
       return (
           f"The {mob.name} used Static Charge! "
-          f"It dealt {enemy_damage} damage and grew stronger."
-      )
-    elif mob.ability_name == "Dragon Fury":
+          f"It dealt {enemy_damage} damage and grew stronger.")
+  elif mob.ability_name == "Dragon Fury":
       return (
-        f"The {mob.name} used Dragon Fury! "
-        f"It dealt {enemy_damage} damage and grew enraged!"
-      )
-    return (f"The {mob.name} used {mob.ability_name}! It dealt {enemy_damage} damage.")
-
+          f"The {mob.name} used Dragon Fury! "
+          f"It dealt {enemy_damage} damage and grew enraged!")
+  return (
+      f"The {mob.name} used {mob.ability_name}! "
+      f"It dealt {enemy_damage} damage.")
 """#Monster and Loot Tables"""
 monsters = [
   ("Goblin", 10, 1, 5, 1,"Humanoid"),
@@ -513,7 +522,8 @@ boss_loot_table= [
     ]
 final_boss_loot_table=[
           Item("Swift Pendant","Necklace", value=300, cd_bonus=1),
-          Item("Deadeye Charm","Necklace", value=300, crit_bonus = 0.1)
+          Item("Deadeye Charm","Necklace", value=300, crit_bonus = 0.1),
+          Item("Guardian Necklace","Necklace", value=300, dmg_rd_bonus = 0.1)
           ]
 elite_loot_table =[
         Item("Iron Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=5, value=15),

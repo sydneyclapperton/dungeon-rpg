@@ -36,6 +36,8 @@ if "player_character" in st.session_state:
                     effects.append(f"CD -{item.cd_bonus}")
                 if item.crit_bonus:
                     effects.append(f"Crit +{int(item.crit_bonus * 100)}%")
+                if item.dmg_rd_bonus:
+                    effects.append(f"DR {item.dmg_rd_bonus:.0%}")
                 if effects:
                     st.write(f"{slot}: {item_name} ({', '.join(effects)})")
                 else:
@@ -55,6 +57,8 @@ if st.session_state.screen == "char_creation":
     st.write(f"Min Damage Modifier: {stats['min_damage']:+}")
     st.write(f"Max Damage Modifier: {stats['max_damage']:+}")
     st.write(f"Critical Chance: {stats['crit_chance']:.0%}")
+    if "damage_reduction" in stats:
+        st.write(f"Damage Reduction: {stats['damage_reduction']:.0%}")
     st.write(f"Ability: {stats['ability']}")
     st.write(f"Effect: {stats['ability_desc']}")
     
@@ -238,6 +242,8 @@ elif st.session_state.screen == "inventory":
                 stats.append(f"Cooldown -{item.cd_bonus}")
             if item.crit_bonus:
                 stats.append(f"Crit +{int(item.crit_bonus * 100)}%")
+            if item.dmg_rd_bonus:
+                stats.append(f"DR {item.dmg_rd_bonus:.0%}")
             st.write(f"{item_name} | {' | '.join(stats)}")
         else:
             st.write(f"{slot}: None")
