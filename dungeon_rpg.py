@@ -132,17 +132,18 @@ class Character:
     self.damage_reduction = class_bonus.get("damage_reduction",0)
     self.cd_bonus = 0
     self.crit_bonus = 0
-    self.highest_floor = 1
     self.run_stats = {
       "kills": 0,
       "elite_kills":0,
       "boss_kills": 0,
       "xp_earned": 0,
       "gold_earned": 0,
-      "items_found": 0}
+      "items_found": 0,
+      "total_dungeon_clears": 0}
     self.signature = None
     self.signature_cd = 0
     self.skip_enemy_turn = False
+    self.dungeon_progress = {}
 
   def attack(self):
     damage = random.randint(self.min_damage, self.max_damage)
@@ -194,7 +195,7 @@ class Character:
           f"Effect: {self.ability_desc}\n"
           f"{signature_text}"
           f"Current XP: {self.xp}/{self.level*10}\n\n"
-          f"Highest Floor Cleared: {self.highest_floor}\n\n"
+          f"Highest Floor Cleared: {self.dungeon_progress['dungeon_1_highest_floor']}\n\n"
           f"HP: {self.hp}/{self.max_hp}\n"
           f"Damage: {self.min_damage}-{self.max_damage}\n"
           f"Crit Chance: {self.crit_chance:.0%}\n"
@@ -327,7 +328,6 @@ class Item:
     self.enhancement = enhancement
     self.dmg_rd_bonus = dmg_rd_bonus
 
-
 """#Combat Functions"""
 
 def handle_victory(player, mob, difficulty):
@@ -337,7 +337,7 @@ def handle_victory(player, mob, difficulty):
     player.run_stats["kills"] += 1
     # Boss bonus
     if difficulty == 50:
-      loot = Loot_Drop("final_boss",0)
+      loot = None
       gold_found = 200
       player.run_stats["boss_kills"] += 1
     elif difficulty % 5 == 0:
@@ -495,6 +495,7 @@ def Spawn_Boss(difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_
 
 def Spawn_Final_Boss():
   return Mob("Ancient Dragon", 600, 40, 50, 200, "Dragonkin", "Dragon Fury", dragon_fury,3)
+
 #Loot tables
 basic_loot_table = [
         Item("Sharp Stick", "Weapon", min_dmg_bonus=1),
@@ -556,8 +557,6 @@ def Loot_Drop(loot_type, floor):
       return "Healing potion"
   elif loot_type =="boss":
     return enhance_item(random.choice(boss_loot_table),floor)
-  elif loot_type == "final_boss":
-    return random.choice(final_boss_loot_table)
   return None
 
 def enhance_item(item,floor):
@@ -573,6 +572,33 @@ def enhance_item(item,floor):
     value=item.value + (enhancement * 5),
     enhancement=enhancement)
 
+#Dungeons
+DUNGEONS = {
+    1: {
+        "name": "The Ancient Depths",
+        "max_floor": 50,
+        "mob_spawner": Spawn_Mob,
+        "boss_spawner": Spawn_Boss,
+        "final_boss_spawner": Spawn_Final_Boss,
+        "reward_loot_table": final_boss_loot_table,
+        "reward_screen": "final_reward",
+        "clear_key": "dungeon_1_clears",
+        "highest_floor_key": "dungeon_1_highest_floor"
+    },
+    2: {
+        "name": "Placeholder Dungeon",
+        "max_floor": 50,
+        "mob_spawner": Spawn_Mob,
+        "boss_spawner": Spawn_Boss,
+        "final_boss_spawner": Spawn_Final_Boss,
+        "reward_loot_table": final_boss_loot_table,
+        "reward_screen": "final_reward",
+        "clear_key": "dungeon_2_clears",
+        "highest_floor_key": "dungeon_2_highest_floor"
+    }
+  }
+
+
 #Save Game
 def save_game(player):
     return {
@@ -583,11 +609,11 @@ def save_game(player):
         "hp": player.hp,
         "gold": player.gold,
         "healing_potions": player.healing_potions,
-        "highest_floor" : player.highest_floor,
         "run_stats": player.run_stats,
         "signature": player.signature,
         "signature_cd": player.signature_cd,
         "active_quests": player.active_quests,
+        "dungeon_progress": player.dungeon_progress,
         "equipment": {
             slot: {"name": item.name, "enhancement": item.enhancement} if item else None
             for slot, item in player.equipment.items()},
