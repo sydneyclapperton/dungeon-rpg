@@ -496,6 +496,79 @@ def Spawn_Boss(difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_
 def Spawn_Final_Boss():
   return Mob("Ancient Dragon", 600, 40, 50, 200, "Dragonkin", "Dragon Fury", dragon_fury,3)
 
+frost_monsters =[
+    ("Frostfang Wolf", 15, 5, 7, 3, "Beast"),
+    ("Snow Stalker", 12, 8, 10, 4, "Beast"),
+    ("Ice Elemental", 20, 5, 10, 4, "Elemental"),
+    ("Winter Acolyte", 18, 5, 7, 3, "Humanoid"),
+    ("Icebound Guardian", 20, 9, 12, 5, "Construct"),
+    ("Ice Wraith", 10, 10, 15, 5, "Undead"),
+    ("Baby Frost Drake", 20, 8, 20, 6, "Dragonkin"),
+    ("Living Blizzard", 10, 7, 15, 4, "Elemental")
+  ]
+
+frost_bosses = [
+    ("Frostfang Alpha", 45, 15, 20, 8, "Beast", "Icicle Fang", lambda x, mob: x*2, 3),
+    ("Icebound Champion", 50, 10, 18, 9, "Construct", "Ice Smash", lambda x, mob: x*3, 6),
+    ("Winter Wraith", 35, 14, 18, 9, "Undead", "Chilling Drain", life_drain, 3),
+    ("Disciple of Frost", 30, 12, 20, 8, "Humanoid", "Frost Dagger", lambda x, mob: x*2, 3),
+    ("Glacial Behemoth", 55, 8, 14, 9, "Beast", "Frost Claw", lambda x, mob: int(x*2.5), 5),
+    ("Ice Drake", 48, 12, 18, 10, "Dragonkin", "Frost Breath", lambda x, mob: x*3 - 10, 4),
+    ("Greater Ice Elemental", 50, 10, 18, 10, "Elemental", "Cutting Frost", lambda x, mob: int(x*1.5), 4),
+    ("Storm of Winter", 40, 5, 25, 10, "Elemental", "Eye of the Storm", static_charge, 2)
+  ]
+
+final_frost_loot_table = [
+      Item("Winter's Amulet","Necklace", value=500, cd_bonus=1, dmg_rd_bonus = 0.05)
+    ]
+
+
+def Spawn_Frost_Mob(difficulty):
+    monster = random.choice(frost_monsters)
+    mob = Mob(monster[0],
+        monster[1] + (difficulty-1) * 4,
+        monster[2] + (difficulty-1),
+        monster[3] + (difficulty-1) * 2,
+        monster[4] + (difficulty-1),
+        monster[5])
+    mob.is_elite = False
+    if random.random() < 0.12:
+      trait_name = random.choice(list(TRAITS.keys()))
+      trait = TRAITS[trait_name]
+      mob.trait = trait_name
+      mob.name = f"{trait_name} {mob.name}"
+      mob.max_hp = int(mob.max_hp * trait["hp_mult"])
+      mob.hp = mob.max_hp
+      mob.min_damage = int(mob.min_damage * trait["damage_mult"])
+      mob.max_damage = int(mob.max_damage * trait["damage_mult"])
+      mob.gold_mult = trait["gold_mult"]
+    if random.random() < 0.1:
+        mob.is_elite = True
+        mob.name = f"Elite {mob.name}"
+        mob.max_hp *= 2
+        mob.hp = mob.max_hp
+        mob.min_damage += difficulty // 2
+        mob.max_damage += difficulty
+        mob.xp_reward *= 2
+    return mob
+
+def Spawn_Frost_Boss(difficulty):
+    boss = random.choice(frost_bosses)
+    return Mob(boss[0],
+        boss[1] + (difficulty-1) * 5,
+        boss[2] + (difficulty-1) ,
+        boss[3] + (difficulty-1) * 2,
+        boss[4] + (difficulty-1),
+        boss[5],
+        boss[6],
+        boss[7],
+        boss[8])
+
+def frost_nova(damage,mob):
+  return damage*2
+def Spawn_Frostbinder():
+    return Mob("The Frostbinder", 1000, 50, 60, 300, "Elemental", "Frost Nova", frost_nova, 3)
+
 #Loot tables
 basic_loot_table = [
         Item("Sharp Stick", "Weapon", min_dmg_bonus=1),
@@ -583,18 +656,20 @@ DUNGEONS = {
         "reward_loot_table": final_boss_loot_table,
         "reward_screen": "final_reward",
         "clear_key": "dungeon_1_clears",
-        "highest_floor_key": "dungeon_1_highest_floor"
+        "highest_floor_key": "dungeon_1_highest_floor",
+        "final_boss_name": "The Ancient Dragon"
     },
     2: {
-        "name": "Placeholder Dungeon",
+        "name": "Frostbound Sanctum",
         "max_floor": 50,
-        "mob_spawner": Spawn_Mob,
-        "boss_spawner": Spawn_Boss,
-        "final_boss_spawner": Spawn_Final_Boss,
-        "reward_loot_table": final_boss_loot_table,
+        "mob_spawner": Spawn_Frost_Mob,
+        "boss_spawner": Spawn_Frost_Boss,
+        "final_boss_spawner": Spawn_Frostbinder,
+        "reward_loot_table": final_frost_loot_table,
         "reward_screen": "final_reward",
         "clear_key": "dungeon_2_clears",
-        "highest_floor_key": "dungeon_2_highest_floor"
+        "highest_floor_key": "dungeon_2_highest_floor",
+        "final_boss_name": "The Frostbinder"
     }
   }
 

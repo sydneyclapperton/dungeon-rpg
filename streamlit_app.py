@@ -192,14 +192,15 @@ elif st.session_state.screen == "town":
                 st.rerun()
             st.divider()
             st.subheader("Dungeon 2")
-            st.write("???")
             if player.dungeon_progress[DUNGEONS[1]["clear_key"]] >= 1:
+                st.write(DUNGEONS[2]["name"])
                 st.write("Unlocked")
                 if st.button("Enter Dungeon 2"):
                     st.session_state.current_dungeon = 2
                     st.session_state.screen = "floor_select"
                     st.rerun()
             else:
+                st.write("???")
                 st.write("🔒 Locked")
                 st.caption("Clear Dungeon 1 to unlock.")
         
@@ -227,8 +228,13 @@ elif st.session_state.screen == "retired":
     st.write(f"XP Earned: {stats['xp_earned']}")
     st.write(f"Gold Earned: {stats['gold_earned']}")
     st.write(f"Items Found: {stats['items_found']}")
-    st.write(f"Dungeon 1 Clears: {player.dungeon_progress['dungeon_1_clears']}")
+    st.subheader("Dungeon Progress")
     st.write(f"Total Dungeon Clears: {stats['total_dungeon_clears']}")
+    for dungeon_id, dungeon in DUNGEONS.items():
+        st.write(
+            f"{dungeon['name']} Highest Floor: {player.dungeon_progress[dungeon['highest_floor_key']]}")
+        st.write(
+            f"{dungeon['name']} Clears: {player.dungeon_progress[dungeon['clear_key']]}")
     if st.button("Game over"):
         del st.session_state.player_character
         if "mob" in st.session_state:
@@ -810,8 +816,13 @@ elif st.session_state.screen == "dungeon":
         st.write(f"XP Earned: {stats['xp_earned']}")
         st.write(f"Gold Earned: {stats['gold_earned']}")
         st.write(f"Items Found: {stats['items_found']}")
-        st.write(f"Dungeon 1 Clears: {player.dungeon_progress['dungeon_1_clears']}")
+        st.subheader("Dungeon Progress")
         st.write(f"Total Dungeon Clears: {stats['total_dungeon_clears']}")
+        for dungeon_id, dungeon in DUNGEONS.items():
+            st.write(
+                f"{dungeon['name']} Highest Floor: {player.dungeon_progress[dungeon['highest_floor_key']]}")
+            st.write(
+                f"{dungeon['name']} Clears: {player.dungeon_progress[dungeon['clear_key']]}")
         if st.button("Game Over"):
             st.session_state.combat_log = []
             del st.session_state.player_character
@@ -861,7 +872,7 @@ elif st.session_state.screen == "final_reward":
     player = st.session_state.player_character
     dungeon=DUNGEONS[st.session_state.current_dungeon]
     st.header("Dungeon Conquered!")
-    st.success("You defeated the Ancient Dragon.")
+    st.success(f"You defeated {dungeon['final_boss_name']}.")
     st.write("Choose your reward.")
     for item in dungeon["reward_loot_table"]:
         stats = []
