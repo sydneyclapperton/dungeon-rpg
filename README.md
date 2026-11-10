@@ -1,8 +1,8 @@
 # Dungeon RPG
 
-A browser-based RPG built with Python and Streamlit featuring dungeon exploration, turn-based combat, character classes, equipment progression, boss encounters, save/load functionality, and dungeon run tracking.
+A browser-based RPG built with Python and Streamlit featuring multi-dungeon exploration, character progression, equipment enhancement, quests, random events, boss encounters, and persistent save/load functionality.
 
-Players create a character, choose a class, and venture into an increasingly dangerous dungeon filled with monsters, powerful bosses, and valuable loot. Defeat enemies, gain experience, level up, discover new equipment, and see how far your adventurer can go before retiring or falling in battle.
+Players create a character, choose a class, and venture into increasingly dangerous dungeons filled with monsters, elite enemies, powerful bosses, and unique rewards. Defeat enemies, gain experience, level up, enhance equipment, learn Signature Moves, complete quests, unlock new dungeons, and build a legendary adventurer before eventually retiring or falling in battle.
 
 [Play Dungeon RPG](https://dungeon-rpg-sydney.streamlit.app/)
 
@@ -14,12 +14,13 @@ Players create a character, choose a class, and venture into an increasingly dan
 
 - Create a custom character
 - Choose a character name and class
-- Six playable classes:
+- Seven playable classes:
   - Warrior
   - Mage
   - Rogue
   - Paladin
   - Berserker
+  - Ranger
   - Commoner
 - Class-specific combat abilities
 - Character leveling system
@@ -42,14 +43,17 @@ Players create a character, choose a class, and venture into an increasingly dan
 
 ### Dungeon System
 
+- Multiple unique dungeons
+- Dungeon-specific progression tracking
+- Dungeon unlock system
 - Multi-floor dungeon progression
 - Enemy scaling based on floor level
 - Random monster encounters
 - Elite monster encounters
 - Random monster traits
 - Boss encounters every 5 floors
-- Boss-specific abilities
-- Boss reward bonuses
+- Dungeon-specific final bosses
+- Dungeon-specific reward tables
 - Random dungeon events
 - Treasure chest encounters
 - Healing fountain encounters
@@ -58,6 +62,35 @@ Players create a character, choose a class, and venture into an increasingly dan
 - Floor checkpoint system
 - Unlockable starting floors
 - Progress persists between saves
+
+## Current Dungeons
+
+### The Ancient Depths
+
+The first dungeon available to all adventurers.
+
+Features:
+
+- Mixed monster population
+- Elite encounters
+- Boss encounters every 5 floors
+- Final Boss: Ancient Dragon
+- Rewards:
+  - Swift Pendant
+  - Deadeye Charm
+  - Guardian Necklace
+
+### Frostbound Sanctum
+
+Unlocked by clearing The Ancient Depths.
+
+Features:
+
+- Frozen-themed monsters and bosses
+- Elementals, Constructs, Undead, Dragonkin, and Beasts
+- Final Boss: The Frostbinder
+- Rewards:
+  - Winter's Amulet
 
 ## Random Dungeon Events
 
@@ -95,6 +128,7 @@ Current events include:
   - Chest
   - Boots
   - Ring
+  - Necklace
 - Equipment grants stat bonuses
 - Elite-specific loot table
 - Increased rewards from elite enemies
@@ -120,7 +154,10 @@ Current events include:
 - Quest system
 - Quest rewards
 - Quest Board with rotating objectives
-- Highest Floor Cleared tracking
+- Per-dungeon progression tracking
+- Per-dungeon clear tracking
+- Total dungeon clear tracking
+- Dungeon-specific rewards
 - Unlockable checkpoint progression
 
 ---
@@ -139,6 +176,7 @@ Current bosses include:
 - Giant Python
 - Lesser Fiend
 - Lich
+- and more!
 
 Bosses feature:
 
@@ -158,6 +196,8 @@ Current monster families include:
 - Demons
 - Undead
 - Dragonkin
+- Constructs
+- Elementals
 
 Special interactions:
 
@@ -283,7 +323,9 @@ Current quest types include:
   - Potions
   - Equipped gear
   - Inventory contents
-  - Highest floor cleared
+  - Dungeon progression
+  - Dungeon clear counts
+  - Highest floor per dungeon
   - Run statistics
   - Learned Signature Move
   - Signature cooldown state
@@ -304,7 +346,9 @@ Current quest types include:
 - Items found
 - Career Summary upon retirement
 - Life Summary upon death
-- Highest cleared floor
+- Per-dungeon progression
+- Per-dungeon clears
+- Total dungeon clears
 
 ---
 
@@ -320,17 +364,17 @@ Current quest types include:
 
 ## Planned Features
 
-- Additional character classes
-- More monsters and bosses
-- Multiple dungeon regions
+- Additional dungeons
 - Environmental dungeon effects
-- Additional Signature Moves
+- Additional character classes
 - Expanded boss mechanics
-- Additional equipment sets
-- Loot rarity system
-- Additional Quests
-- Town Expansion
+- Additional Signature Moves
+- Additional quest varieties
+- Arena game mode
 - Status effects (Poison, Burn, Stun, etc.)
+- Town expansion
+- Additional necklace rewards
+- Dungeon-specific loot tables
 - Achievements and records
 - Monster artwork
-- Dungeon-specific loot tables
+- Loot rarity system
