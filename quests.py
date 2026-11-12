@@ -32,14 +32,14 @@ quest_pool =[{
     "reward_type": "Gold",
     "reward_amount": 500
     },
-    {
-    "name": "Deep Delver",
-    "description": "Delve 5 floors deeper into the dungeon.",
-    "target": "highest_floor",
-    "goal": 5,
-    "reward_type": "Gold",
-    "reward_amount": 500
-    },
+    #{
+    #"name": "Deep Delver",
+    #"description": "Delve 5 floors deeper into the dungeon.",
+    #"target": "highest_floor",
+    #"goal": 5,
+    #"reward_type": "Gold",
+    #"reward_amount": 500
+    #},
     {
     "name": "Gold Hoarder",
     "description": "Earn 250 gold.",
