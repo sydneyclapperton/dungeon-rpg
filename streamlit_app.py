@@ -6,6 +6,7 @@ from dungeon_rpg import (CLASS_DATA, Character, handle_victory, save_game, load_
 from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
 from legacy import DEFAULT_LEGACY_DATA
 import quests 
+from copy import deepcopy
 st.title("Dungeon RPG")
 
 def process_victory(player, mob, floor):
@@ -25,7 +26,7 @@ def process_victory(player, mob, floor):
 if "screen" not in st.session_state:
     st.session_state.screen = "char_creation"
 if "legacy_data" not in st.session_state:
-    st.session_state.legacy_data = DEFAULT_LEGACY_DATA.copy()
+    st.session_state.legacy_data = deepcopy(DEFAULT_LEGACY_DATA)
 if "player_character" in st.session_state:
     player = st.session_state.player_character
     with st.sidebar:
@@ -83,7 +84,7 @@ if st.session_state.screen == "char_creation":
             )
             st.session_state.player_character = player
             if not st.session_state.get("continue_lineage", False):
-                st.session_state.legacy_data = DEFAULT_LEGACY_DATA.copy()
+                st.session_state.legacy_data = deepcopy(DEFAULT_LEGACY_DATA)
             for dungeon_id in DUNGEONS:
                 player.dungeon_progress[f"dungeon_{dungeon_id}_clears"] = 0
                 player.dungeon_progress[f"dungeon_{dungeon_id}_highest_floor"] = 1
@@ -126,7 +127,7 @@ if st.session_state.screen == "char_creation":
         for dungeon_id in DUNGEONS:
             player.dungeon_progress.setdefault(f"dungeon_{dungeon_id}_clears",0)
             player.dungeon_progress.setdefault(f"dungeon_{dungeon_id}_highest_floor",1)
-        st.session_state.legacy_data = save_data.get("legacy_data", DEFAULT_LEGACY_DATA.copy())
+        st.session_state.legacy_data = save_data.get("legacy_data", deepcopy(DEFAULT_LEGACY_DATA))
         # Migrate old saves to legacy unlock system
         if player.dungeon_progress.get("dungeon_1_clears", 0) > 0:
             st.session_state.legacy_data["highest_unlocked_dungeon"] = max(
