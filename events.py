@@ -87,7 +87,7 @@ def shrine_event(player, floor):
                 st.session_state.event_result = (f"The shrine restores {heal_amount} HP.")
                 st.rerun()
             if st.button("Enhance Equipment"):
-                equipped_slots = [slot for slot, item in player.equipment.items()if item]
+                equipped_slots = [slot for slot, item in player.equipment.items()if item and item.slot != "Necklace"]
                 if equipped_slots:
                     slot = random.choice(equipped_slots)
                     current_item = player.equipment[slot]

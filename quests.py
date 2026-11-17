@@ -32,14 +32,14 @@ quest_pool =[{
     "reward_type": "Gold",
     "reward_amount": 500
     },
-    #{
-    #"name": "Deep Delver",
-    #"description": "Delve 5 floors deeper into the dungeon.",
-    #"target": "highest_floor",
-    #"goal": 5,
-    #"reward_type": "Gold",
-    #"reward_amount": 500
-    #},
+    {
+    "name": "Deep Delver",
+    "description": "Delve 5 floors deeper into the dungeon.",
+    "target": "highest_floor",
+    "goal": 5,
+    "reward_type": "Gold",
+    "reward_amount": 500
+    },
     {
     "name": "Gold Hoarder",
     "description": "Earn 250 gold.",
@@ -80,14 +80,14 @@ def get_available_quests(count=3):
 def accept_quest(player, quest_template):
     quest = quest_template.copy()
     if quest["target"] == "highest_floor":
-        quest["starting_value"] = player.highest_floor
+        quest["starting_value"] = max(value for key, value in player.dungeon_progress.items() if "highest_floor" in key)
     else:
         quest["starting_value"] = player.run_stats[quest["target"]]
     return quest
 
 def get_quest_progress(player,quest):
     if quest["target"] == "highest_floor":
-        current = player.highest_floor
+        current = max(value for key,value in player.dungeon_progress.items() if "highest_floor" in key)
     else:
         current = player.run_stats[quest["target"]]
     return current - quest["starting_value"]
