@@ -190,12 +190,13 @@ class Character:
     damage_reduction_text = "\n"
     if self.damage_reduction > 0:
       damage_reduction_text = (f"Damage Reduction: {self.damage_reduction:.0%}\n\n")
+    highest_floor = max(value for key,value in self.dungeon_progress.items() if "highest_floor" in key)
     return (f"Name: {self.name}\nClass: {self.player_class}\n"
           f"Level: {self.level}\nAbility: {self.special_ability}\n"
           f"Effect: {self.ability_desc}\n"
           f"{signature_text}"
           f"Current XP: {self.xp}/{self.level*10}\n\n"
-          f"Highest Floor Cleared: {self.dungeon_progress['dungeon_1_highest_floor']}\n\n"
+          f"Highest Floor Cleared: {highest_floor}\n\n"
           f"HP: {self.hp}/{self.max_hp}\n"
           f"Damage: {self.min_damage}-{self.max_damage}\n"
           f"Crit Chance: {self.crit_chance:.0%}\n"
@@ -330,7 +331,7 @@ class Item:
 
 """#Combat Functions"""
 
-def handle_victory(player, mob, difficulty):
+def handle_victory(player, mob, difficulty, dungeon):
     player.xp += mob.xp_reward
     leveled_up = player.level_up()
     gold_found = random.randint(1+(difficulty-1), 3*difficulty)
@@ -342,14 +343,14 @@ def handle_victory(player, mob, difficulty):
       player.run_stats["boss_kills"] += 1
     elif difficulty % 5 == 0:
         gold_found *= 2
-        loot = Loot_Drop("boss",difficulty)
+        loot = Loot_Drop("boss",difficulty, dungeon)
         player.run_stats["boss_kills"] += 1
     elif getattr(mob, "is_elite", False):
         gold_found *= 2
-        loot = Loot_Drop("elite",difficulty)
+        loot = Loot_Drop("elite",difficulty, dungeon)
         player.run_stats["elite_kills"] += 1
     else:
-      loot = Loot_Drop("basic", difficulty)
+      loot = Loot_Drop("basic", difficulty, dungeon)
     if loot:
         player.run_stats["items_found"] += 1
         if loot == "Healing potion":
@@ -388,6 +389,10 @@ def enemy_turn(player, mob):   # Handles all enemy retaliation after player acti
       return (
           f"The {mob.name} used Dragon Fury! "
           f"It dealt {enemy_damage} damage and grew enraged!")
+  elif mob.ability_name == "Frost Nova":
+    return(
+      f"The {mob.name} unleashed Frost Nova! "
+      f"It dealt {enemy_damage} damage and the winter chill grows stronger!")
   return (
       f"The {mob.name} used {mob.ability_name}! "
       f"It dealt {enemy_damage} damage.")
@@ -565,6 +570,8 @@ def Spawn_Frost_Boss(difficulty):
         boss[8])
 
 def frost_nova(damage,mob):
+  mob.min_damage += 5
+  mob.max_damage += 10
   return damage*2
 def Spawn_Frostbinder():
     return Mob("The Frostbinder", 1000, 50, 60, 300, "Elemental", "Frost Nova", frost_nova, 3)
@@ -615,21 +622,48 @@ shop_loot_table = [
   Item("Chainmail", "Chest", hp_bonus=20, value=150),
   Item("Steel Longblade", "Weapon", min_dmg_bonus=10, max_dmg_bonus=20, value= 250)
   ]
+basic_frost_loot_table = [
+        Item("Iceforged Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=6, value=15),
+        Item("Frostguard Helm", "Helmet", hp_bonus=10, value=15),
+        Item("Fur Cloak", "Chest", hp_bonus=12, value=20),
+        Item("Snowstride Boots", "Boots", hp_bonus=6, value=15),
+        Item("Frostweave Robes", "Chest", hp_bonus = 10, value=15),
+        Item("Fur Cap", "Helmet", hp_bonus = 15, min_dmg_bonus =-1),
+        Item("Icicle Dagger", "Weapon", min_dmg_bonus = 2, max_dmg_bonus = 8, value=10),
+        Item("Winter Staff","Weapon", min_dmg_bonus = 1, max_dmg_bonus=10, value=20)
+    ]
+elite_frost_loot_table = [
+        Item("Iceforged Claymore", "Weapon", min_dmg_bonus=5, max_dmg_bonus=8, value=25),
+        Item("Icebound Helmet", "Helmet", hp_bonus=15, value=25),
+        Item("Icebound Breastplate", "Chest", hp_bonus=25, value=25),
+        Item("Icebound Boots", "Boots", hp_bonus=12, value=25),
+        Item("Frostbite Axe", "Weapon", min_dmg_bonus=4, max_dmg_bonus=12, value=25)
+  ]
+boss_frost_loot_table= [
+        Item("Glacial Greatsword", "Weapon", min_dmg_bonus=8, max_dmg_bonus=15, value=50),
+        Item("Frostfang Blade", "Weapon", min_dmg_bonus=5, max_dmg_bonus=20, value=50),
+        Item("Helm of Eternal Winter", "Helmet", hp_bonus=25, value=45),
+        Item("Armor of Eternal Winter", "Chest", hp_bonus=40, value=50),
+        Item("Boots of Eternal Winter", "Boots", hp_bonus=20,value=20),
+        Item("Ring of the Blizzard", "Ring", max_dmg_bonus=15, value=60),
+        Item("Ring of Icy Veins", "Ring", hp_bonus = 30,value = 60),
+        Item("Frozen Signet", "Ring", min_dmg_bonus=5, max_dmg_bonus=9, value=60)
+    ]
 
-def Loot_Drop(loot_type, floor):
+def Loot_Drop(loot_type, floor, dungeon):
   if loot_type == "basic":
     random_num = random.random()
     if random_num < 0.20:
-      return enhance_item(random.choice(basic_loot_table), floor)
+      return enhance_item(random.choice(dungeon["basic_loot_table"]), floor)
     elif random_num < 0.45:
       return "Healing potion"
   elif loot_type =="elite":
     if random.random() < .7:
-      return enhance_item(random.choice(elite_loot_table),floor)
+      return enhance_item(random.choice(dungeon["elite_loot_table"]),floor)
     else:
       return "Healing potion"
   elif loot_type =="boss":
-    return enhance_item(random.choice(boss_loot_table),floor)
+    return enhance_item(random.choice(dungeon["boss_loot_table"]),floor)
   return None
 
 def enhance_item(item,floor):
@@ -645,6 +679,19 @@ def enhance_item(item,floor):
     value=item.value + (enhancement * 5),
     enhancement=enhancement)
 
+ALL_ITEMS = (
+    basic_loot_table
+    + elite_loot_table
+    + boss_loot_table
+    + final_boss_loot_table
+    + shop_loot_table
+    + basic_frost_loot_table
+    + elite_frost_loot_table
+    + boss_frost_loot_table
+    + final_frost_loot_table
+  )
+
+ITEM_LOOKUP = {item.name: item for item in ALL_ITEMS}
 #Dungeons
 DUNGEONS = {
     1: {
@@ -653,6 +700,9 @@ DUNGEONS = {
         "mob_spawner": Spawn_Mob,
         "boss_spawner": Spawn_Boss,
         "final_boss_spawner": Spawn_Final_Boss,
+        "basic_loot_table": basic_loot_table,
+        "elite_loot_table": elite_loot_table,
+        "boss_loot_table": boss_loot_table,
         "reward_loot_table": final_boss_loot_table,
         "reward_screen": "final_reward",
         "clear_key": "dungeon_1_clears",
@@ -665,6 +715,9 @@ DUNGEONS = {
         "mob_spawner": Spawn_Frost_Mob,
         "boss_spawner": Spawn_Frost_Boss,
         "final_boss_spawner": Spawn_Frostbinder,
+        "basic_loot_table": basic_frost_loot_table,
+        "elite_loot_table": elite_frost_loot_table,
+        "boss_loot_table": boss_frost_loot_table,
         "reward_loot_table": final_frost_loot_table,
         "reward_screen": "final_reward",
         "clear_key": "dungeon_2_clears",
@@ -701,10 +754,7 @@ def load_game(uploaded_file):
 
 #Item lookup
 def get_item_by_name(name):
-    for item in basic_loot_table + elite_loot_table + boss_loot_table + shop_loot_table + final_boss_loot_table:
-        if item.name == name:
-            return item
-    return None
+    return ITEM_LOOKUP.get(name)
 
 def create_enhanced_item(base_item, enhancement):
     return Item(

@@ -1,15 +1,15 @@
 import streamlit as st
 import json
 import random
-from dungeon_rpg import (CLASS_DATA, Character, Spawn_Mob, 
-    handle_victory, Spawn_Boss, save_game, load_game, get_item_by_name, shop_loot_table,
-    get_unlocked_floors, create_enhanced_item, enemy_turn, Spawn_Final_Boss, final_boss_loot_table, DUNGEONS)
+from dungeon_rpg import (CLASS_DATA, Character, handle_victory, save_game, load_game, get_item_by_name, shop_loot_table,
+    get_unlocked_floors, create_enhanced_item, enemy_turn, DUNGEONS)
 from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
 import quests 
 st.title("Dungeon RPG")
 
 def process_victory(player, mob, floor):
-    rewards = handle_victory(player, mob, floor)
+    dungeon = DUNGEONS[st.session_state.current_dungeon]
+    rewards = handle_victory(player, mob, floor, dungeon)
     st.session_state.xp_gained = rewards["xp_gained"]
     st.session_state.gold_found = rewards["gold_found"]
     if rewards["loot"]:
@@ -221,7 +221,6 @@ elif st.session_state.screen == "retired":
     stats = player.run_stats
     st.header("Career Summary")
     st.write(f"Level: {player.level}")
-    st.write(f"Highest Floor Cleared: {player.dungeon_progress['dungeon_1_highest_floor']}")
     st.write(f"Monsters Defeated: {stats['kills']}")
     st.write(f"Elite Monsters Defeated: {stats['elite_kills']}")
     st.write(f"Bosses Defeated: {stats['boss_kills']}")
@@ -557,34 +556,49 @@ elif st.session_state.screen == "quest_board":
         st.session_state.quest_board = quests.get_available_quests()
     st.header("Quest Board")
     MAX_ACTIVE_QUESTS = 3
+    # Active Quests
+    st.subheader("Active Quests")
+    if not player.active_quests:
+        st.write("No active quests.")
+    else:
+        for active_quest in player.active_quests:
+            with st.container(border=True):
+                st.write(f"**{active_quest['name']}**")
+                st.write(active_quest["description"])
+                progress = quests.get_quest_progress(player, active_quest)
+                st.write(f"Progress: {min(progress, active_quest['goal'])}/{active_quest['goal']}")
+                reward = (f"{active_quest['reward_amount']} {active_quest['reward_type']}")
+                st.write(f"Reward: {reward}")
+                if quests.is_quest_complete(player, active_quest):
+                    st.success("Quest Complete!")
+                    if st.button(f"Turn In {active_quest['name']}", key=f"turnin_{active_quest['name']}"):
+                        quests.grant_quest_reward(player,active_quest)
+                        player.active_quests.remove(active_quest)
+                        st.rerun()
+    st.divider()
+    # Available Quests
+    st.subheader("Available Quests")
     for quest in st.session_state.quest_board:
+        # Don't show already accepted quests
+        if any(q["name"] == quest["name"] for q in player.active_quests):
+            continue
         with st.container(border=True):
             st.subheader(quest["name"])
             st.write(quest["description"])
             reward = (f"{quest['reward_amount']} {quest['reward_type']}")
             st.write(f"Reward: {reward}")
-            active_quest = next((q for q in player.active_quests if q["name"] == quest["name"]),None)
-            # Quest not accepted
-            if active_quest is None:
-                if len(player.active_quests) >= MAX_ACTIVE_QUESTS:
-                    st.info("Maximum active quests reached.")
-                elif st.button(f"Accept {quest['name']}"):
-                    player.active_quests.append(quests.accept_quest(player, quest))
-                    st.rerun()
-            # Quest accepted
-            else:
-                progress = quests.get_quest_progress(player, active_quest)
-                st.write(f"Progress: {min(progress, active_quest['goal'])}/{active_quest['goal']}")
-                if quests.is_quest_complete(player, active_quest):
-                    st.success("Quest Complete!")
-                    if st.button(f"Turn In {quest['name']}"):
-                        quests.grant_quest_reward(player, active_quest)
-                        player.active_quests.remove(active_quest)
-                        available = [q for q in quests.quest_pool if q["name"] not in [board_quest["name"]for board_quest in st.session_state.quest_board]]
-                        if available:
-                            index = (st.session_state.quest_board.index(quest))
-                            st.session_state.quest_board[index] = (random.choice(available))
-                        st.rerun()
+            if len(player.active_quests) >= MAX_ACTIVE_QUESTS:
+                st.info("Maximum active quests reached.")
+            elif st.button(f"Accept {quest['name']}", key=f"accept_{quest['name']}"):
+                player.active_quests.append(quests.accept_quest(player, quest))
+                available = [ q for q in quests.quest_pool
+                    if q["name"] not in [board_quest["name"] for board_quest in st.session_state.quest_board]
+                    and q["name"] not in [active["name"] for active in player.active_quests]
+                    ]
+                if available:
+                    index = st.session_state.quest_board.index(quest)
+                    st.session_state.quest_board[index] = random.choice(available)
+                st.rerun()
     if st.button("Return to Town"):
         st.session_state.screen = "town"
         st.rerun()
@@ -619,7 +633,7 @@ elif st.session_state.screen == "dungeon":
     st.header(f"Dungeon - Floor: {st.session_state.floor}")
     dungeon = DUNGEONS[st.session_state.current_dungeon]
     if st.session_state.floor == dungeon["max_floor"]:
-        st.warning("You found the Ancient Dragon!")
+        st.warning(f"You found {dungeon['final_boss_name']}!")
     elif st.session_state.floor % 5 == 0:
         st.warning("Boss Floor!")
     if "mob" not in st.session_state:
@@ -809,7 +823,6 @@ elif st.session_state.screen == "dungeon":
         stats = player.run_stats
         st.header("Life Summary")
         st.write(f"Level: {player.level}")
-        st.write(f"Highest Floor Cleared: {player.dungeon_progress['dungeon_1_highest_floor']}")
         st.write(f"Monsters Defeated: {stats['kills']}")
         st.write(f"Elite Monsters Defeated: {stats['elite_kills']}")
         st.write(f"Bosses Defeated: {stats['boss_kills']}")
