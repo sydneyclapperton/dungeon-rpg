@@ -4,6 +4,7 @@ import random
 from dungeon_rpg import (CLASS_DATA, Character, handle_victory, save_game, load_game, get_item_by_name, shop_loot_table,
     get_unlocked_floors, create_enhanced_item, enemy_turn, DUNGEONS)
 from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
+from legacy import DEFAULT_LEGACY_DATA
 import quests 
 st.title("Dungeon RPG")
 
@@ -15,11 +16,16 @@ def process_victory(player, mob, floor):
     if rewards["loot"]:
         st.session_state.loot_found = rewards["loot"]
     if rewards["leveled_up"]:
-        st.session_state.level_message = (
-            f"{player.name} reached level {player.level}!")
+        if player.level >= 10 and not st.session_state.legacy_data["trainer_unlocked"]:
+            st.session_state.legacy_data["trainer_unlocked"] = True
+            st.session_state.level_message = (f"{player.name} reached level {player.level}! The Trainer has been permanently unlocked.")
+        else:
+            st.session_state.level_message = (f"{player.name} reached level {player.level}!")
 
 if "screen" not in st.session_state:
     st.session_state.screen = "char_creation"
+if "legacy_data" not in st.session_state:
+    st.session_state.legacy_data = DEFAULT_LEGACY_DATA.copy()
 if "player_character" in st.session_state:
     player = st.session_state.player_character
     with st.sidebar:
@@ -81,6 +87,7 @@ if st.session_state.screen == "char_creation":
                 player.dungeon_progress[f"dungeon_{dungeon_id}_highest_floor"] = 1
             st.session_state.screen = "town"
             st.rerun()
+    
     #Loading game    
     uploaded_save = st.file_uploader("Load Save File",type=["json"])
     if uploaded_save:
@@ -116,7 +123,12 @@ if st.session_state.screen == "char_creation":
         for dungeon_id in DUNGEONS:
             player.dungeon_progress.setdefault(f"dungeon_{dungeon_id}_clears",0)
             player.dungeon_progress.setdefault(f"dungeon_{dungeon_id}_highest_floor",1)
-
+        st.session_state.legacy_data = save_data.get("legacy_data", DEFAULT_LEGACY_DATA.copy())
+        # Migrate old saves to legacy unlock system
+        if player.dungeon_progress.get("dungeon_1_clears", 0) > 0:
+            st.session_state.legacy_data["highest_unlocked_dungeon"] = max(
+                st.session_state.legacy_data["highest_unlocked_dungeon"],
+                2)
         for slot, item_data in save_data.get("equipment", {}).items():
             if isinstance(item_data, str):
                 item = get_item_by_name(item_data)
@@ -142,7 +154,7 @@ if st.session_state.screen == "char_creation":
                         item = base_item
                     else:
                         item = create_enhanced_item(base_item,item_data.get("enhancement", 0))
-                    player.inventory.append(item)
+                    player.inventory.append(item)        
         player.hp = min(save_data["hp"], player.max_hp)
         st.session_state.player_character = player
         st.session_state.screen = "town"
@@ -170,12 +182,15 @@ elif st.session_state.screen == "town":
         if st.button("Inventory"):
             st.session_state.screen = "inventory"
             st.rerun()
-        if player.level >= 10:
+        if st.session_state.legacy_data["trainer_unlocked"]:
             if st.button("Trainer"):
                 st.session_state.screen = "trainer"
                 st.rerun()
         if st.button("Blacksmith"):
             st.session_state.screen = "blacksmith"
+            st.rerun()
+        if st.button("Hall of Heroes"):
+            st.session_state.screen = "hall_of_heroes"
             st.rerun()
 
     with col2:
@@ -192,7 +207,7 @@ elif st.session_state.screen == "town":
                 st.rerun()
             st.divider()
             st.subheader("Dungeon 2")
-            if player.dungeon_progress[DUNGEONS[1]["clear_key"]] >= 1:
+            if st.session_state.legacy_data["highest_unlocked_dungeon"] >= 2:
                 st.write(DUNGEONS[2]["name"])
                 st.write("Unlocked")
                 if st.button("Enter Dungeon 2"):
@@ -204,7 +219,11 @@ elif st.session_state.screen == "town":
                 st.write("🔒 Locked")
                 st.caption("Clear Dungeon 1 to unlock.")
         
-        save_data = save_game(player)
+        if st.button("Bank"):
+            st.session_state.screen = "bank"
+            st.rerun()
+        
+        save_data = save_game(player, st.session_state.legacy_data)
         if st.download_button(label="Save Game",
             data=json.dumps(save_data),
             file_name=f"{player.name}_save.json",
@@ -215,6 +234,7 @@ elif st.session_state.screen == "town":
         if st.button("Retire"):
             st.session_state.screen = "retired"
             st.rerun()
+
 elif st.session_state.screen == "retired":
     player = st.session_state.player_character
     st.write(f"{player.name} decided to retire from adventuring.")
@@ -235,6 +255,16 @@ elif st.session_state.screen == "retired":
         st.write(
             f"{dungeon['name']} Clears: {player.dungeon_progress[dungeon['clear_key']]}")
     if st.button("Game over"):
+        hero_record = {
+            "name": player.name,
+            "class": player.player_class,
+            "level": player.level,
+            "kills": player.run_stats["kills"],
+            "boss_kills": player.run_stats["boss_kills"],
+            "dungeon_clears": player.run_stats["total_dungeon_clears"],
+            "fate": "Retired"
+            }
+        st.session_state.legacy_data["hall_of_heroes"].append(hero_record)
         del st.session_state.player_character
         if "mob" in st.session_state:
             del st.session_state.mob
@@ -250,6 +280,24 @@ elif st.session_state.screen == "retired":
             del st.session_state.floor
         st.session_state.screen = "char_creation"
         st.rerun()            
+elif st.session_state.screen == "hall_of_heroes":
+    st.header("Hall of Heroes")
+    heroes = st.session_state.legacy_data["hall_of_heroes"]
+    if not heroes:
+        st.write("No heroes have been honored yet.")
+    else:
+        for hero in reversed(heroes):
+            with st.container(border=True):
+                st.write(f"**{hero['name']}** ({hero['class']})")
+                st.write(f"Level {hero['level']}")
+                st.write(f"Kills: {hero['kills']}")
+                st.write(f"Bosses Defeated: {hero['boss_kills']}")
+                st.write(f"Dungeon Clears: {hero['dungeon_clears']}")
+                st.write(f"Fate: {hero['fate']}")
+    if st.button("Return to Town"):
+        st.session_state.screen = "town"
+        st.rerun()
+
 elif st.session_state.screen == "inventory":
     player = st.session_state.player_character
     st.header("Inventory")
@@ -603,6 +651,35 @@ elif st.session_state.screen == "quest_board":
         st.session_state.screen = "town"
         st.rerun()
 
+elif st.session_state.screen == "bank":
+    player = st.session_state.player_character
+    st.header("Town Bank")
+    if "bank_message" in st.session_state:
+        st.success(st.session_state.bank_message)
+        del st.session_state.bank_message
+    st.write(f"Stored Gold: {st.session_state.legacy_data['bank_gold']}g")
+    st.write(f"Current Gold: {player.gold}g")
+    amount = st.number_input("Amount of Gold", min_value = 1, value = 100, step = 100)
+    if st.button("Deposit Gold"):
+        if player.gold < amount:
+            st.error("You don't have enough gold.")
+        else:
+            player.gold -= amount
+            st.session_state.legacy_data["bank_gold"] += amount
+            st.session_state.bank_message = f"Deposited {amount} gold."
+            st.rerun()
+    if st.button("Withdraw Gold"):
+        if st.session_state.legacy_data["bank_gold"] < amount:
+            st.error("The bank doesn't contain that much gold.")
+        else:
+            st.session_state.legacy_data["bank_gold"] -= amount
+            player.gold += amount
+            st.session_state.bank_message = f"Withdrew {amount} gold."
+            st.rerun()
+    if st.button("Return to Town"):
+        st.session_state.screen = "town"
+        st.rerun()
+
 elif st.session_state.screen == "floor_select":
     player = st.session_state.player_character
     dungeon = DUNGEONS[st.session_state.current_dungeon]
@@ -838,6 +915,16 @@ elif st.session_state.screen == "dungeon":
                 f"{dungeon['name']} Clears: {player.dungeon_progress[dungeon['clear_key']]}")
         if st.button("Game Over"):
             st.session_state.combat_log = []
+            hero_record = {
+                "name": player.name,
+                "class": player.player_class,
+                "level": player.level,
+                "kills": player.run_stats["kills"],
+                "boss_kills": player.run_stats["boss_kills"],
+                "dungeon_clears": player.run_stats["total_dungeon_clears"],
+                "fate": f"Slain in {DUNGEONS[st.session_state.current_dungeon]['name']} on Floor {st.session_state.floor}"
+                }
+            st.session_state.legacy_data["hall_of_heroes"].append(hero_record)
             del st.session_state.player_character
             if "mob" in st.session_state:
                 del st.session_state.mob
@@ -900,5 +987,9 @@ elif st.session_state.screen == "final_reward":
             player.inventory.append(item)
             player.dungeon_progress[dungeon["clear_key"]] += 1
             player.run_stats["total_dungeon_clears"] += 1
+            st.session_state.legacy_data["highest_unlocked_dungeon"] = max(
+                st.session_state.legacy_data["highest_unlocked_dungeon"],
+                st.session_state.current_dungeon + 1
+                )
             st.session_state.screen = "town"
             st.rerun()      

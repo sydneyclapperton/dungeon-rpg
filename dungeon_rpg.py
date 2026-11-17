@@ -728,7 +728,7 @@ DUNGEONS = {
 
 
 #Save Game
-def save_game(player):
+def save_game(player, legacy_data):
     return {
         "name": player.name,
         "player_class": player.player_class,
@@ -742,6 +742,7 @@ def save_game(player):
         "signature_cd": player.signature_cd,
         "active_quests": player.active_quests,
         "dungeon_progress": player.dungeon_progress,
+        "legacy_data": legacy_data,
         "equipment": {
             slot: {"name": item.name, "enhancement": item.enhancement} if item else None
             for slot, item in player.equipment.items()},
