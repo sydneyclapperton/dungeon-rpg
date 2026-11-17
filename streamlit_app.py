@@ -82,9 +82,12 @@ if st.session_state.screen == "char_creation":
                 player_class
             )
             st.session_state.player_character = player
+            if not st.session_state.get("continue_lineage", False):
+                st.session_state.legacy_data = DEFAULT_LEGACY_DATA.copy()
             for dungeon_id in DUNGEONS:
                 player.dungeon_progress[f"dungeon_{dungeon_id}_clears"] = 0
                 player.dungeon_progress[f"dungeon_{dungeon_id}_highest_floor"] = 1
+            st.session_state.continue_lineage = False
             st.session_state.screen = "town"
             st.rerun()
     
@@ -156,6 +159,7 @@ if st.session_state.screen == "char_creation":
                         item = create_enhanced_item(base_item,item_data.get("enhancement", 0))
                     player.inventory.append(item)        
         player.hp = min(save_data["hp"], player.max_hp)
+        st.session_state.continue_lineage = True
         st.session_state.player_character = player
         st.session_state.screen = "town"
         st.rerun()
@@ -278,6 +282,7 @@ elif st.session_state.screen == "retired":
             del st.session_state.xp_gained
         if "floor" in st.session_state:
             del st.session_state.floor
+        st.session_state.continue_lineage = True
         st.session_state.screen = "char_creation"
         st.rerun()            
 elif st.session_state.screen == "hall_of_heroes":
@@ -939,6 +944,7 @@ elif st.session_state.screen == "dungeon":
             if "current_dungeon" in st.session_state:
                 del st.session_state.current_dungeon
             st.session_state.floor = 1
+            st.session_state.continue_lineage = True
             st.session_state.screen = "char_creation"
             st.rerun()
 
