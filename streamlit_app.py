@@ -205,26 +205,9 @@ elif st.session_state.screen == "town":
             st.session_state.screen = "quest_board"
             st.rerun()
         
-        with st.popover("Dungeon"):
-            st.subheader("Dungeon 1")
-            st.write("The Ancient Depths")
-            if st.button("Enter Dungeon 1"):
-                st.session_state.current_dungeon = 1
-                st.session_state.screen = "floor_select"
-                st.rerun()
-            st.divider()
-            st.subheader("Dungeon 2")
-            if st.session_state.legacy_data["highest_unlocked_dungeon"] >= 2:
-                st.write(DUNGEONS[2]["name"])
-                st.write("Unlocked")
-                if st.button("Enter Dungeon 2"):
-                    st.session_state.current_dungeon = 2
-                    st.session_state.screen = "floor_select"
-                    st.rerun()
-            else:
-                st.write("???")
-                st.write("🔒 Locked")
-                st.caption("Clear Dungeon 1 to unlock.")
+        if st.button("Dungeon Gate"):
+            st.session_state.screen = "dungeon_gate"
+            st.rerun()
         
         if st.button("Bank"):
             st.session_state.screen = "bank"
@@ -688,15 +671,36 @@ elif st.session_state.screen == "bank":
         st.session_state.screen = "town"
         st.rerun()
 
+elif st.session_state.screen == "dungeon_gate":
+    st.header("Dungeon Gate")
+    for dungeon_id, dungeon in DUNGEONS.items():
+        with st.container(border=True):
+            st.subheader(dungeon["name"])
+            environment = ENVIRONMENTS[dungeon["environment"]]
+            st.write(f"Environment: {environment['name']}")
+            st.caption(environment['description'])
+            st.write(f"Highest Floor: {player.dungeon_progress[dungeon['highest_floor_key']]}")
+            st.write(f"Clears: {player.dungeon_progress[dungeon['clear_key']]}")
+            if (dungeon_id <= st.session_state.legacy_data["highest_unlocked_dungeon"]):
+                if st.button(
+                    f"Enter {dungeon['name']}", key=f"enter_{dungeon_id}"):
+                    st.session_state.current_dungeon = dungeon_id
+                    st.session_state.screen = "floor_select"
+                    st.rerun()
+            else:
+                st.write("🔒 Locked")
+    if st.button("Return to Town"):
+        st.session_state.screen = "town"
+        st.rerun()
+
 elif st.session_state.screen == "floor_select":
     player = st.session_state.player_character
     dungeon = DUNGEONS[st.session_state.current_dungeon]
     environment = ENVIRONMENTS[dungeon["environment"]]
+    st.header(dungeon["name"])
     st.info(f"{environment['name']}: {environment['description']}")
     highest_floor = player.dungeon_progress[dungeon["highest_floor_key"]]
     unlocked_floors = get_unlocked_floors(highest_floor)
-    st.header(dungeon["name"])
-
     if len(unlocked_floors) > 1:
         selected_floor = st.radio(
             "Choose Starting Floor",
