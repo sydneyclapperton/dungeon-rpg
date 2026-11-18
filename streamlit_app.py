@@ -200,8 +200,10 @@ elif st.session_state.screen == "town":
             st.session_state.screen = "hall_of_heroes"
             st.rerun()
 
+    completed_quests = sum(1 for quest in player.active_quests if quests.is_quest_complete(player,quest))
     with col2:
-        if st.button("Quest Board"):
+        quest_label = (f"Quest Board ✨ ({completed_quests})" if completed_quests > 0 else "Quest Board")
+        if st.button(quest_label):
             st.session_state.screen = "quest_board"
             st.rerun()
         
