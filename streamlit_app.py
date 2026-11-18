@@ -6,7 +6,9 @@ from dungeon_rpg import (CLASS_DATA, Character, handle_victory, save_game, load_
 from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
 from legacy import DEFAULT_LEGACY_DATA
 import quests 
+from environments import ENVIRONMENTS
 from copy import deepcopy
+
 st.title("Dungeon RPG")
 
 def process_victory(player, mob, floor):
@@ -689,6 +691,8 @@ elif st.session_state.screen == "bank":
 elif st.session_state.screen == "floor_select":
     player = st.session_state.player_character
     dungeon = DUNGEONS[st.session_state.current_dungeon]
+    environment = ENVIRONMENTS[dungeon["environment"]]
+    st.info(f"{environment['name']}: {environment['description']}")
     highest_floor = player.dungeon_progress[dungeon["highest_floor_key"]]
     unlocked_floors = get_unlocked_floors(highest_floor)
     st.header(dungeon["name"])
@@ -713,8 +717,10 @@ elif st.session_state.screen == "dungeon":
     player = st.session_state.player_character
     if "floor" not in st.session_state:
         st.session_state.floor = 1
-    st.header(f"Dungeon - Floor: {st.session_state.floor}")
     dungeon = DUNGEONS[st.session_state.current_dungeon]
+    environment = ENVIRONMENTS[dungeon["environment"]]
+    st.header(f"{dungeon['name']} - Floor: {st.session_state.floor}")
+    st.caption(f"{environment['name']} - {environment['description']}")
     if st.session_state.floor == dungeon["max_floor"]:
         st.warning(f"You found {dungeon['final_boss_name']}!")
     elif st.session_state.floor % 5 == 0:
@@ -756,6 +762,7 @@ elif st.session_state.screen == "dungeon":
         with col1:
             if st.button("Attack"):
                 damage, crit = player.attack()
+                damage = int(damage * environment["player_damage_modifier"])
                 player.reduce_cooldown()
                 mob.hp -= damage
                 if crit:
@@ -765,7 +772,7 @@ elif st.session_state.screen == "dungeon":
                 if mob.hp <= 0:
                     process_victory(player,mob,st.session_state.floor)
                 else:
-                    st.session_state.combat_log.append(enemy_turn(player, mob))
+                    st.session_state.combat_log.append(enemy_turn(player, mob, environment))
                 st.rerun()
             
             if st.button(f"{player.special_ability} (CD: {player.special_cooldown})"):
@@ -774,6 +781,7 @@ elif st.session_state.screen == "dungeon":
                     st.error(f"{player.special_ability} is on cooldown: {player.special_cooldown} turns remaining.")
                 else:
                     damage, crit = result
+                    damage = int(damage*environment["player_damage_modifier"])
                     if crit:
                         st.session_state.combat_log.append(f"Critical hit! Your {player.special_ability} did {damage} damage.")
                     else:
@@ -782,12 +790,12 @@ elif st.session_state.screen == "dungeon":
                         st.session_state.combat_log.append(f"You defeated the {mob.name}.")
                         process_victory(player,mob,st.session_state.floor)
                     else:
-                        st.session_state.combat_log.append(enemy_turn(player, mob))
+                        st.session_state.combat_log.append(enemy_turn(player, mob, environment))
                     st.rerun()
             
             if player.signature:
                 if st.button(f"{player.signature} (CD: {player.signature_cd})"):
-                    result = player.use_signature(mob)
+                    result = player.use_signature(mob, environment)
                     if result is None:
                         st.error(f"{player.signature} is on cooldown: {player.signature_cd} turns remaining.")
                     else:
@@ -808,19 +816,19 @@ elif st.session_state.screen == "dungeon":
                         if mob.hp <= 0:
                             process_victory(player, mob, st.session_state.floor)
                         else:
-                            st.session_state.combat_log.append(enemy_turn(player, mob))
+                            st.session_state.combat_log.append(enemy_turn(player, mob, environment))
                         st.rerun()                            
                 
         with col2:
             if st.button("Use Potion"):
                 if player.healing_potions > 0:
-                    healed = player.use_potion()
+                    healed = player.use_potion(environment["healing_modifier"])
                     player.reduce_cooldown()
                     st.session_state.combat_log.append(f"You regained {healed} HP.")
                     if mob.hp <= 0:
                         process_victory(player, mob, st.session_state.floor)
                     else:
-                        st.session_state.combat_log.append(enemy_turn(player, mob)) 
+                        st.session_state.combat_log.append(enemy_turn(player, mob, environment)) 
                     st.rerun()     
                 else:
                     st.error("You have no potions!")

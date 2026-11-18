@@ -205,11 +205,12 @@ class Character:
           f"Potions: {self.healing_potions}\n"
           )
 
-  def use_potion(self):
+  def use_potion(self, healing_modifier=1.0):
     if self.healing_potions == 0:
         return False
     else:
       heal_amount = int(self.max_hp*.4)
+      heal_amount = int(heal_amount*healing_modifier)
       self.hp = min(self.max_hp, self.hp+heal_amount)
       self.healing_potions -=1
       return heal_amount
@@ -229,12 +230,14 @@ class Character:
     if self.signature_cd > 0:
       self.signature_cd -= 1
   
-  def use_signature(self, mob):
+  def use_signature(self, mob, environment=None):
       if self.signature_cd > 0:
         return None
       elif self.signature == "Rejuvenation":
         self.signature_cd = max(1, 5 - self.cd_bonus)
         heal_amount = int(self.max_hp*.7)
+        if environment:
+          heal_amount = int(heal_amount*environment['healing_modifier'])
         self.hp = min(self.hp+heal_amount, self.max_hp)
         return {
           "damage": 0,
@@ -251,6 +254,8 @@ class Character:
             "instakill": True}
         damage, crit = self.attack()
         damage *= 2.5
+        if environment:
+          damage = int(damage * environment["player_damage_modifier"])
         actual_damage = min(int(damage), mob.hp)
         mob.hp -= actual_damage
         return {
@@ -261,6 +266,8 @@ class Character:
       elif self.signature == "Bloodlust":
         self.signature_cd = max(1, 5 - self.cd_bonus)
         damage, crit = self.attack()
+        if environment:
+          damage = int(damage * environment["player_damage_modifier"])
         actual_damage = min(damage*2, mob.hp)
         healed = int(actual_damage/2)
         self.hp = min(self.hp + healed, self.max_hp)
@@ -273,6 +280,8 @@ class Character:
       elif self.signature == "Greed":
           self.signature_cd = max(1, 5 - self.cd_bonus)
           damage, crit = self.attack()
+          if environment:
+            damage = int(damage * environment["player_damage_modifier"])
           actual_damage = min(damage, mob.hp)
           mob.hp -= actual_damage
           greed_kill = mob.hp <= 0
@@ -367,7 +376,7 @@ def handle_victory(player, mob, difficulty, dungeon):
         "loot": loot,
         "leveled_up": leveled_up}
 
-def enemy_turn(player, mob):   # Handles all enemy retaliation after player actions
+def enemy_turn(player, mob, environment=None):   # Handles all enemy retaliation after player actions
   if player.skip_enemy_turn:
       player.skip_enemy_turn = False
       return "You keep your distance and avoid retaliation!"
@@ -377,6 +386,8 @@ def enemy_turn(player, mob):   # Handles all enemy retaliation after player acti
   if not used_ability:
       mob.reduce_cooldown()
       enemy_damage = base_damage
+  if environment:
+    enemy_damage = int(enemy_damage*environment["enemy_damage_modifier"])
   enemy_damage = max(1,int(enemy_damage * (1 - player.damage_reduction)))
   player.hp -= enemy_damage
   if not used_ability:
@@ -707,7 +718,8 @@ DUNGEONS = {
         "reward_screen": "final_reward",
         "clear_key": "dungeon_1_clears",
         "highest_floor_key": "dungeon_1_highest_floor",
-        "final_boss_name": "The Ancient Dragon"
+        "final_boss_name": "The Ancient Dragon",
+        "environment": "none"
     },
     2: {
         "name": "Frostbound Sanctum",
@@ -722,7 +734,8 @@ DUNGEONS = {
         "reward_screen": "final_reward",
         "clear_key": "dungeon_2_clears",
         "highest_floor_key": "dungeon_2_highest_floor",
-        "final_boss_name": "The Frostbinder"
+        "final_boss_name": "The Frostbinder",
+        "environment": "bitter_cold"
     }
   }
 
