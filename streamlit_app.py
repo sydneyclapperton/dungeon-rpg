@@ -12,6 +12,7 @@ from copy import deepcopy
 st.title("Dungeon RPG")
 
 def process_victory(player, mob, floor):
+    player.skip_enemy_turn = False
     dungeon = DUNGEONS[st.session_state.current_dungeon]
     rewards = handle_victory(player, mob, floor, dungeon)
     st.session_state.xp_gained = rewards["xp_gained"]
