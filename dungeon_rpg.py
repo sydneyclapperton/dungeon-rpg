@@ -1,6 +1,7 @@
 #packages
 import random
 import json
+from environments import run_end_of_turn
 
 """#Object Creation
 
@@ -376,7 +377,7 @@ def handle_victory(player, mob, difficulty, dungeon):
         "loot": loot,
         "leveled_up": leveled_up}
 
-def enemy_turn(player, mob, environment=None):   # Handles all enemy retaliation after player actions
+def enemy_turn(player, mob, environment=None, floor=None):   # Handles all enemy retaliation after player actions
   if player.skip_enemy_turn:
       player.skip_enemy_turn = False
       return "You keep your distance and avoid retaliation!"
@@ -390,23 +391,43 @@ def enemy_turn(player, mob, environment=None):   # Handles all enemy retaliation
     enemy_damage = int(enemy_damage*environment["enemy_damage_modifier"])
   enemy_damage = max(1,int(enemy_damage * (1 - player.damage_reduction)))
   player.hp -= enemy_damage
+  end_of_turn_message = None
+  if environment and floor:
+    end_of_turn_message = run_end_of_turn(environment, player, floor)
   if not used_ability:
-      return f"The {mob.name} hit you for {enemy_damage} damage."
+      message = f"The {mob.name} hit you for {enemy_damage} damage."
+      if end_of_turn_message:
+        message += f"\n{end_of_turn_message}"
+      return message
   if mob.ability_name == "Static Charge":
-      return (
+      message = (
           f"The {mob.name} used Static Charge! "
           f"It dealt {enemy_damage} damage and grew stronger.")
+      if end_of_turn_message:
+        message += f"\n{end_of_turn_message}"
+      return message
   elif mob.ability_name == "Dragon Fury":
-      return (
+      message = (
           f"The {mob.name} used Dragon Fury! "
           f"It dealt {enemy_damage} damage and grew enraged!")
+      if end_of_turn_message:
+        message += f"\n{end_of_turn_message}"
+      return message
   elif mob.ability_name == "Frost Nova":
-    return(
+    message = (
       f"The {mob.name} unleashed Frost Nova! "
       f"It dealt {enemy_damage} damage and the winter chill grows stronger!")
-  return (
+    if end_of_turn_message:
+      message += f"\n{end_of_turn_message}"
+    return message
+  message = (
       f"The {mob.name} used {mob.ability_name}! "
       f"It dealt {enemy_damage} damage.")
+  if end_of_turn_message:
+    message += f"\n{end_of_turn_message}"
+  return message
+
+
 """#Monster and Loot Tables"""
 monsters = [
   ("Goblin", 10, 1, 5, 1,"Humanoid"),
@@ -417,8 +438,7 @@ monsters = [
   ("Bandit Archer", 15, 5, 6, 2, "Human"),
   ("Giant Spider", 12, 2, 5, 1, "Beast"),
   ("Boar", 20, 1, 5, 2, "Beast"),
-  ("Lesser Drake", 18, 2, 6, 2, "Dragonkin"),
-  ("Skeleton", 15, 2, 5, 2, "Undead")
+  ("Lesser Drake", 18, 2, 6, 2, "Dragonkin")
   ]
 TRAITS = {
     "Enraged": {
@@ -522,7 +542,6 @@ frost_monsters =[
     ("Baby Frost Drake", 20, 8, 20, 6, "Dragonkin"),
     ("Living Blizzard", 10, 7, 15, 4, "Elemental")
   ]
-
 frost_bosses = [
     ("Frostfang Alpha", 45, 15, 20, 8, "Beast", "Icicle Fang", lambda x, mob: x*2, 3),
     ("Icebound Champion", 50, 10, 18, 9, "Construct", "Ice Smash", lambda x, mob: x*3, 6),
@@ -533,11 +552,6 @@ frost_bosses = [
     ("Greater Ice Elemental", 50, 10, 18, 10, "Elemental", "Cutting Frost", lambda x, mob: int(x*1.5), 4),
     ("Storm of Winter", 40, 5, 25, 10, "Elemental", "Eye of the Storm", static_charge, 2)
   ]
-
-final_frost_loot_table = [
-      Item("Winter's Amulet","Necklace", value=500, cd_bonus=1, dmg_rd_bonus = 0.05)
-    ]
-
 
 def Spawn_Frost_Mob(difficulty):
     monster = random.choice(frost_monsters)
@@ -587,7 +601,74 @@ def frost_nova(damage,mob):
 def Spawn_Frostbinder():
     return Mob("The Frostbinder", 1000, 50, 60, 300, "Elemental", "Frost Nova", frost_nova, 3)
 
+crypt_monsters = [
+    ("Skeleton Warrior", 18, 6, 8, 3, "Undead"),
+    ("Skeletal Archer", 14, 8, 10, 4, "Undead"),
+    ("Zombie", 28, 3, 6, 2, "Undead"),
+    ("Ghoul", 16, 7, 11, 4, "Undead"),
+    ("Restless Spirit", 12, 10, 14, 5, "Undead")
+  ]
+crypt_bosses = [
+    ("Necromancer", 60, 10, 14, 15, "Undead", "Life Drain", life_drain, 3),
+    ("Dread Wraith", 45, 15, 22, 18, "Undead", "Soul Rend", lambda x, mob: x * 2, 4),
+    ("Bone Colossus", 90, 8, 12, 20, "Undead", "Bone Crush", lambda x, mob: x + 25, 5)
+  ]
+
+def Spawn_Crypt_Mob(difficulty):
+    monster = random.choice(crypt_monsters)
+    mob = Mob(monster[0],
+        monster[1] + (difficulty-1) * 4,
+        monster[2] + (difficulty-1),
+        monster[3] + (difficulty-1) * 2,
+        monster[4] + (difficulty-1),
+        monster[5])
+    mob.is_elite = False
+    if random.random() < 0.12:
+      trait_name = random.choice(list(TRAITS.keys()))
+      trait = TRAITS[trait_name]
+      mob.trait = trait_name
+      mob.name = f"{trait_name} {mob.name}"
+      mob.max_hp = int(mob.max_hp * trait["hp_mult"])
+      mob.hp = mob.max_hp
+      mob.min_damage = int(mob.min_damage * trait["damage_mult"])
+      mob.max_damage = int(mob.max_damage * trait["damage_mult"])
+      mob.gold_mult = trait["gold_mult"]
+    if random.random() < 0.1:
+        mob.is_elite = True
+        mob.name = f"Elite {mob.name}"
+        mob.max_hp *= 2
+        mob.hp = mob.max_hp
+        mob.min_damage += difficulty // 2
+        mob.max_damage += difficulty
+        mob.xp_reward *= 2
+    return mob
+def Spawn_Crypt_Boss(difficulty):
+    boss = random.choice(crypt_bosses)
+    return Mob(boss[0],
+        boss[1] + (difficulty-1) * 5,
+        boss[2] + (difficulty-1) ,
+        boss[3] + (difficulty-1) * 2,
+        boss[4] + (difficulty-1),
+        boss[5],
+        boss[6],
+        boss[7],
+        boss[8])
+def Spawn_Bone_Tyrant():
+  return Mob("The Bone Tyrant", 1200, 30, 50, 500, "Undead Lord", "Death Bolt", lambda x, mob: x*3, 5)
+
 #Loot tables
+shop_loot_table = [
+  Item("Bronze Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=5, value=25),
+  Item("Magic Wand", "Weapon", min_dmg_bonus=1, max_dmg_bonus=8, value=25),
+  Item("Leather Cap", "Helmet", hp_bonus=5, value=15),
+  Item("Leather Shirt", "Chest", hp_bonus=15, value=30),
+  Item("Leather Boots", "Boots", hp_bonus=5, value=15),
+  Item("Warhammer", "Weapon", min_dmg_bonus=6, max_dmg_bonus=6, value= 75),
+  Item("Traveler's Boots", "Boots", hp_bonus=8, min_dmg_bonus=2, value=60),
+  Item("Chainmail", "Chest", hp_bonus=20, value=150),
+  Item("Steel Longblade", "Weapon", min_dmg_bonus=10, max_dmg_bonus=20, value= 250)
+  ]
+
 basic_loot_table = [
         Item("Sharp Stick", "Weapon", min_dmg_bonus=1),
         Item("Rusty Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=3),
@@ -622,17 +703,7 @@ elite_loot_table =[
         Item("Iron Helmet", "Helmet", hp_bonus=7, value=15),
         Item("Iron Breastplate", "Chest", hp_bonus=17, value=15),
         Item("Iron Boots", "Boots", hp_bonus=7, value=15)]
-shop_loot_table = [
-  Item("Bronze Sword", "Weapon", min_dmg_bonus=2, max_dmg_bonus=5, value=25),
-  Item("Magic Wand", "Weapon", min_dmg_bonus=1, max_dmg_bonus=8, value=25),
-  Item("Leather Cap", "Helmet", hp_bonus=5, value=15),
-  Item("Leather Shirt", "Chest", hp_bonus=15, value=30),
-  Item("Leather Boots", "Boots", hp_bonus=5, value=15),
-  Item("Warhammer", "Weapon", min_dmg_bonus=6, max_dmg_bonus=6, value= 75),
-  Item("Traveler's Boots", "Boots", hp_bonus=8, min_dmg_bonus=2, value=60),
-  Item("Chainmail", "Chest", hp_bonus=20, value=150),
-  Item("Steel Longblade", "Weapon", min_dmg_bonus=10, max_dmg_bonus=20, value= 250)
-  ]
+
 basic_frost_loot_table = [
         Item("Iceforged Sword", "Weapon", min_dmg_bonus=3, max_dmg_bonus=6, value=15),
         Item("Frostguard Helm", "Helmet", hp_bonus=10, value=15),
@@ -660,6 +731,42 @@ boss_frost_loot_table= [
         Item("Ring of Icy Veins", "Ring", hp_bonus = 30,value = 60),
         Item("Frozen Signet", "Ring", min_dmg_bonus=5, max_dmg_bonus=9, value=60)
     ]
+final_frost_loot_table = [
+      Item("Winter's Amulet","Necklace", value=500, cd_bonus=1, dmg_rd_bonus = 0.05),
+      Item("Bottled Blizzard","Necklace", value=500, crit_bonus = 0.15)
+    ]
+
+basic_crypt_loot_table = [
+    Item("Bone Sword", "Weapon", min_dmg_bonus=4, max_dmg_bonus=7, value=20),
+    Item("Bone Helm", "Helmet", hp_bonus=15, value=20),
+    Item("Graveplate", "Chest", hp_bonus=18, value=25),
+    Item("Bonewalk Boots", "Boots", hp_bonus=8, value=20),
+    Item("Necromancer Robes", "Chest", hp_bonus=12, value=25),
+    Item("Skull Cap", "Helmet", hp_bonus=20, min_dmg_bonus=-1, value=15),
+    Item("Ribcage Dagger", "Weapon", min_dmg_bonus=3, max_dmg_bonus=10, value=20),
+    Item("Gravetouched Staff", "Weapon", min_dmg_bonus=2, max_dmg_bonus=12, value=25)
+  ]
+elite_crypt_loot_table = [
+    Item("Bone Greatsword", "Weapon", min_dmg_bonus=6, max_dmg_bonus=10, value=35),
+    Item("Crown of Bones", "Helmet", hp_bonus=20, value=35),
+    Item("Graveplate Armor", "Chest", hp_bonus=30, value=35),
+    Item("Bonecrusher Boots", "Boots", hp_bonus=15, value=35),
+    Item("Wraithblade", "Weapon", min_dmg_bonus=5, max_dmg_bonus=14, value=35)
+  ]
+boss_crypt_loot_table = [
+    Item("Bone Cleaver", "Weapon", min_dmg_bonus=10, max_dmg_bonus=18, value=65),
+    Item("Wraithfang", "Weapon", min_dmg_bonus=6, max_dmg_bonus=24, value=65),
+    Item("Crypt Lord Helmet", "Helmet", hp_bonus=30, value=60),
+    Item("Crypt Lord Plate", "Chest", hp_bonus=50, value=65),
+    Item("Crypt Lord Boots", "Boots", hp_bonus=25, value=50),
+    Item("Ring of Souls", "Ring", hp_bonus = 40, value=75),
+    Item("Necromancer's Signet", "Ring", max_dmg_bonus = 18, value = 75),
+    Item("Skull Ring", "Ring", min_dmg_bonus=6, max_dmg_bonus=12, value=75)
+  ]
+final_crypt_loot_table =[
+  Item("Decaying Charm","Necklace", value=700, cd_bonus=1, crit_bonus = 0.07),
+  Item("Undead Heart","Necklace", value=700, dmg_rd_bonus = 0.15)
+  ]
 
 def Loot_Drop(loot_type, floor, dungeon):
   if loot_type == "basic":
@@ -700,6 +807,10 @@ ALL_ITEMS = (
     + elite_frost_loot_table
     + boss_frost_loot_table
     + final_frost_loot_table
+    + basic_crypt_loot_table
+    + elite_crypt_loot_table
+    + boss_crypt_loot_table
+    + final_crypt_loot_table
   )
 
 ITEM_LOOKUP = {item.name: item for item in ALL_ITEMS}
@@ -736,6 +847,22 @@ DUNGEONS = {
         "highest_floor_key": "dungeon_2_highest_floor",
         "final_boss_name": "The Frostbinder",
         "environment": "bitter_cold"
+    },
+    3: {
+        "name": "The Crypt of the Damned",
+        "max_floor": 50,
+        "mob_spawner": Spawn_Crypt_Mob,
+        "boss_spawner": Spawn_Crypt_Boss,
+        "final_boss_spawner": Spawn_Bone_Tyrant,
+        "basic_loot_table": basic_crypt_loot_table,
+        "elite_loot_table": elite_crypt_loot_table,
+        "boss_loot_table": boss_crypt_loot_table,
+        "reward_loot_table": final_crypt_loot_table,
+        "reward_screen": "final_reward",
+        "clear_key": "dungeon_3_clears",
+        "highest_floor_key": "dungeon_3_highest_floor",
+        "final_boss_name": "The Bone Tyrant",
+        "environment": "necrotic_aura"
     }
   }
 

@@ -776,7 +776,7 @@ elif st.session_state.screen == "dungeon":
                 if mob.hp <= 0:
                     process_victory(player,mob,st.session_state.floor)
                 else:
-                    st.session_state.combat_log.append(enemy_turn(player, mob, environment))
+                    st.session_state.combat_log.append(enemy_turn(player, mob, environment, st.session_state.floor))
                 st.rerun()
             
             if st.button(f"{player.special_ability} (CD: {player.special_cooldown})"):
@@ -794,7 +794,7 @@ elif st.session_state.screen == "dungeon":
                         st.session_state.combat_log.append(f"You defeated the {mob.name}.")
                         process_victory(player,mob,st.session_state.floor)
                     else:
-                        st.session_state.combat_log.append(enemy_turn(player, mob, environment))
+                        st.session_state.combat_log.append(enemy_turn(player, mob, environment, st.session_state.floor))
                     st.rerun()
             
             if player.signature:
@@ -820,7 +820,7 @@ elif st.session_state.screen == "dungeon":
                         if mob.hp <= 0:
                             process_victory(player, mob, st.session_state.floor)
                         else:
-                            st.session_state.combat_log.append(enemy_turn(player, mob, environment))
+                            st.session_state.combat_log.append(enemy_turn(player, mob, environment, st.session_state.floor))
                         st.rerun()                            
                 
         with col2:
@@ -832,7 +832,7 @@ elif st.session_state.screen == "dungeon":
                     if mob.hp <= 0:
                         process_victory(player, mob, st.session_state.floor)
                     else:
-                        st.session_state.combat_log.append(enemy_turn(player, mob, environment)) 
+                        st.session_state.combat_log.append(enemy_turn(player, mob, environment, st.session_state.floor)) 
                     st.rerun()     
                 else:
                     st.error("You have no potions!")
