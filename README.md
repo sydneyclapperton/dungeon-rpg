@@ -54,6 +54,7 @@ Players create a character, choose a class, and venture into increasingly danger
 - Boss encounters every 5 floors
 - Dungeon-specific final bosses
 - Dungeon-specific reward tables
+- Dungeon-specific environmental effects
 - Random dungeon events
 - Treasure chest encounters
 - Healing fountain encounters
@@ -62,6 +63,27 @@ Players create a character, choose a class, and venture into increasingly danger
 - Floor checkpoint system
 - Unlockable starting floors
 - Progress persists between saves
+
+### Legacy System
+
+- Persistent account-wide progression
+- Hall of Heroes tracking retired and fallen adventurers
+- Permanent dungeon unlock progression
+- Permanent Trainer unlocks
+- Bank storage shared across heroes
+- Achievement tracking across generations
+- Legacy data persists through save/load
+
+### Achievement System
+
+- Persistent achievement tracking
+- Unlock notifications
+- Achievement collection view
+- Boss achievements
+- Level milestone achievements
+- Retirement achievements
+- Death achievements
+- Dungeon completion achievements
 
 ## Current Dungeons
 
@@ -75,10 +97,6 @@ Features:
 - Elite encounters
 - Boss encounters every 5 floors
 - Final Boss: Ancient Dragon
-- Rewards:
-  - Swift Pendant
-  - Deadeye Charm
-  - Guardian Necklace
 
 ### Frostbound Sanctum
 
@@ -89,8 +107,35 @@ Features:
 - Frozen-themed monsters and bosses
 - Elementals, Constructs, Undead, Dragonkin, and Beasts
 - Final Boss: The Frostbinder
-- Rewards:
-  - Winter's Amulet
+ 
+### Crypt of the Damned
+
+Unlocked by clearing Frostbound Sanctum.
+
+Features:
+
+- Undead-themed monsters and bosses
+- Necrotic Aura environmental effect
+- Skeletons, Wraiths, Necromancers, Zombies, and other undead enemies
+- Final Boss: Bone Tyrant
+
+## Dungeon Environments
+
+Each dungeon features unique environmental effects that alter gameplay.
+
+### Ancient Depths
+
+- No environmental modifier
+
+### Frostbound Sanctum
+
+- Bitter Cold
+- Healing effects reduced by 25%
+
+### Crypt of the Damned
+
+- Necrotic Aura
+- Take damage at the end of each turn equal to the current floor level
 
 ## Random Dungeon Events
 
@@ -139,6 +184,8 @@ Current events include:
 - Item enhancements scale based on dungeon depth
 - Enhanced items provide increased stats and value
 - Enhanced items persist through save/load
+- Equipment stat comparison system
+- Green/red stat comparison indicators
 
 ### Progression & Economy
 
@@ -248,6 +295,7 @@ Traits can also appear on Elite Monsters.
 - Blacksmith
 - Inventory management
 - Trainer
+- Bank
 - Quest Board
 - Dungeon floor selection
 - Save game
@@ -332,6 +380,11 @@ Current quest types include:
   - Item enhancement data
   - Active quests
   - Quest board data
+  - Legacy progression data
+  - Hall of Heroes records
+  - Achievement progress
+  - Banked gold
+  - Permanent unlocks
 - Works on desktop and mobile devices
 - No account required
 
@@ -365,16 +418,16 @@ Current quest types include:
 ## Planned Features
 
 - Additional dungeons
-- Environmental dungeon effects
+- Additional dungeon environments
+- Achievement rewards
+- Subclass system
+- Hall of Legends
 - Additional character classes
 - Expanded boss mechanics
 - Additional Signature Moves
 - Additional quest varieties
 - Arena game mode
 - Status effects (Poison, Burn, Stun, etc.)
-- Town expansion
-- Additional necklace rewards
-- Dungeon-specific loot tables
-- Achievements and records
-- Monster artwork
+- Additional necklace effects
 - Loot rarity system
+- Monster artwork
