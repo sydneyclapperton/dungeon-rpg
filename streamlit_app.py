@@ -47,7 +47,24 @@ def achievement_dialog():
         unlocked = has_achievement(st.session_state.legacy_data, achievement_id)
         icon = "✅" if unlocked else "🔒"
         st.markdown(f"**{icon} {achievement['name']}**  \n{achievement['description']}")
-        
+def format_stat_with_diff(label, value, equipped_value, suffix=""):
+    text = f"{label} {value:+}{suffix}"
+    if equipped_value is not None:
+        diff = value - equipped_value
+        if diff > 0:
+            text += (
+                f" <span style='color:green'>"
+                f"({diff:+}{suffix})"
+                f"</span>"
+            )
+        elif diff < 0:
+            text += (
+                f" <span style='color:red'>"
+                f"({diff:+}{suffix})"
+                f"</span>"
+            )
+    return text        
+
 if "screen" not in st.session_state:
     st.session_state.screen = "char_creation"
 if "legacy_data" not in st.session_state:
@@ -346,23 +363,30 @@ elif st.session_state.screen == "inventory":
         st.write("Your inventory is empty.")
     else:
         for i, item in enumerate(player.inventory):
+            equipped_item = player.equipment[item.slot]
             item_name = item.name
             if item.enhancement > 0:
                 item_name += f" +{item.enhancement}"
             stats = []
             if item.hp_bonus:
-                stats.append(f"HP {item.hp_bonus:+}")
+                equipped_value = (equipped_item.hp_bonus if equipped_item else None)
+                stats.append(format_stat_with_diff("HP", item.hp_bonus, equipped_value))
             if item.min_dmg_bonus:
-                stats.append(f"Min DMG {item.min_dmg_bonus:+}")
+                equipped_value = (equipped_item.min_dmg_bonus if equipped_item else None)
+                stats.append(format_stat_with_diff("Min DMG", item.min_dmg_bonus, equipped_value))
             if item.max_dmg_bonus:
-                stats.append(f"Max DMG {item.max_dmg_bonus:+}")
+                equipped_value = (equipped_item.max_dmg_bonus if equipped_item else None)
+                stats.append(format_stat_with_diff("Max DMG", item.max_dmg_bonus, equipped_value))
             if item.cd_bonus:
-                stats.append(f"Cooldown -{item.cd_bonus}")
+                equipped_value = (equipped_item.cd_bonus if equipped_item else None)
+                stats.append(format_stat_with_diff("Cooldown -", item.cd_bonus,equipped_value))
             if item.crit_bonus:
-                stats.append(f"Crit +{int(item.crit_bonus * 100)}%")
+                equipped_value = (int(equipped_item.crit_bonus * 100) if equipped_item else None)
+                stats.append(format_stat_with_diff("Crit", int(item.crit_bonus * 100), equipped_value, "%"))
             if item.dmg_rd_bonus:
-                stats.append(f"DR {item.dmg_rd_bonus:.0%}")
-            st.write(f"{item_name} | {' | '.join(stats)}")
+                equipped_value = (int(equipped_item.dmg_rd_bonus * 100) if equipped_item else None)
+                stats.append(format_stat_with_diff("DR", int(item.dmg_rd_bonus * 100), equipped_value,"%"))
+            st.markdown(f"**{item_name}** | {' | '.join(stats)}",unsafe_allow_html=True)
             if st.button(f"Equip {item_name}", key=f"equip_{i}"):
                 old_item = player.equipment[item.slot]
                 player.equip(item)
@@ -408,29 +432,31 @@ elif st.session_state.screen == "sell":
     if not player.inventory:
         st.write("You have nothing to sell")
     else:
-        for i,item in enumerate(player.inventory):
+        for i, item in enumerate(player.inventory):
+            equipped_item = player.equipment[item.slot]
             item_name = item.name
-            if item.enhancement >0:
+            if item.enhancement > 0:
                 item_name += f" +{item.enhancement}"
             stats = []
             if item.hp_bonus:
-                stats.append(f"HP {item.hp_bonus:+}")
+                equipped_value = (equipped_item.hp_bonus if equipped_item else None)
+                stats.append(format_stat_with_diff("HP", item.hp_bonus, equipped_value))
             if item.min_dmg_bonus:
-                stats.append(f"Min DMG {item.min_dmg_bonus:+}")
+                equipped_value = (equipped_item.min_dmg_bonus if equipped_item else None)
+                stats.append(format_stat_with_diff("Min DMG", item.min_dmg_bonus, equipped_value))
             if item.max_dmg_bonus:
-                stats.append(f"Max DMG {item.max_dmg_bonus:+}")
+                equipped_value = (equipped_item.max_dmg_bonus if equipped_item else None)
+                stats.append(format_stat_with_diff("Max DMG", item.max_dmg_bonus, equipped_value))
             if item.cd_bonus:
-                stats.append(f"CD -{item.cd_bonus}")
+                equipped_value = (equipped_item.cd_bonus if equipped_item else None)
+                stats.append(format_stat_with_diff("Cooldown -", item.cd_bonus,equipped_value))
             if item.crit_bonus:
-                stats.append(f"Crit +{int(item.crit_bonus * 100)}%")
+                equipped_value = (int(equipped_item.crit_bonus * 100) if equipped_item else None)
+                stats.append(format_stat_with_diff("Crit", int(item.crit_bonus * 100), equipped_value, "%"))
             if item.dmg_rd_bonus:
-                stats.append(f"DR {item.dmg_rd_bonus:.0%}")
-            st.write(
-                f"{item_name} | "
-                f"{' | '.join(stats)} | "
-                f"Value: {item.value}g | "
-                f"Sell: {item.value//2}g"
-                )
+                equipped_value = (int(equipped_item.dmg_rd_bonus * 100) if equipped_item else None)
+                stats.append(format_stat_with_diff("DR", int(item.dmg_rd_bonus * 100), equipped_value,"%"))
+            st.markdown(f"**{item_name}** | {' | '.join(stats)}",unsafe_allow_html=True)
             if st.button(f"Sell {item_name}", key=f"sell_{i}"):
                 player.gold += item.value//2
                 sold_item = player.inventory.pop(i)
