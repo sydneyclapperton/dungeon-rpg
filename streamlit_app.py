@@ -2,7 +2,7 @@ import streamlit as st
 import json
 import random
 from dungeon_rpg import (CLASS_DATA, Character, handle_victory, save_game, load_game, get_item_by_name, shop_loot_table,
-    get_unlocked_floors, create_enhanced_item, enemy_turn, DUNGEONS)
+    get_unlocked_floors, create_enhanced_item, enemy_turn, DUNGEONS, Spawn_Boss, Spawn_Mob)
 from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
 from legacy import DEFAULT_LEGACY_DATA
 import quests 
@@ -25,6 +25,18 @@ def process_victory(player, mob, floor):
             st.session_state.level_message = (f"{player.name} reached level {player.level}! The Trainer has been permanently unlocked.")
         else:
             st.session_state.level_message = (f"{player.name} reached level {player.level}!")
+def clear_combat_state():
+    st.session_state.combat_log = []
+    for key in [
+        "level_message",
+        "gold_found",
+        "loot_found",
+        "xp_gained",
+        "greed_bonus",
+        "mob"
+    ]:
+        if key in st.session_state:
+            del st.session_state[key]
 
 if "screen" not in st.session_state:
     st.session_state.screen = "char_creation"
@@ -259,18 +271,7 @@ elif st.session_state.screen == "retired":
             }
         st.session_state.legacy_data["hall_of_heroes"].append(hero_record)
         del st.session_state.player_character
-        if "mob" in st.session_state:
-            del st.session_state.mob
-        if "level_message" in st.session_state:
-            del st.session_state.level_message
-        if "gold_found" in st.session_state:
-            del st.session_state.gold_found
-        if "loot_found" in st.session_state:
-            del st.session_state.loot_found
-        if "xp_gained" in st.session_state:
-            del st.session_state.xp_gained
-        if "floor" in st.session_state:
-            del st.session_state.floor
+        clear_combat_state()
         st.session_state.continue_lineage = True
         st.session_state.screen = "char_creation"
         st.rerun()            
@@ -737,7 +738,7 @@ elif st.session_state.screen == "dungeon":
         if st.session_state.floor == dungeon["max_floor"]:
             st.session_state.mob = dungeon["final_boss_spawner"]()
         elif st.session_state.floor % 5 ==0:
-            st.session_state.mob = dungeon["boss_spawner"](st.session_state.floor)
+            st.session_state.mob = Spawn_Boss(dungeon['boss_table'], st.session_state.floor)
         else:
             if random.random() <.1:
                 event = trigger_event(player, st.session_state.floor)
@@ -745,7 +746,7 @@ elif st.session_state.screen == "dungeon":
                 st.session_state.screen = "event"
                 st.rerun()
             else:
-                st.session_state.mob = dungeon["mob_spawner"](st.session_state.floor)
+                st.session_state.mob = Spawn_Mob(dungeon["monster_table"], st.session_state.floor)
     mob = st.session_state.mob
     if getattr(mob, "is_elite", False):
         st.warning(f"Elite Monster: {mob.name}!")
@@ -866,52 +867,17 @@ elif st.session_state.screen == "dungeon":
         if st.session_state.floor == dungeon["max_floor"]:
             if st.button("Claim Reward"):
                 dungeon=DUNGEONS[st.session_state.current_dungeon]
-                st.session_state.combat_log = []
-                if "level_message" in st.session_state:
-                    del st.session_state.level_message
-                if "gold_found" in st.session_state:
-                    del st.session_state.gold_found
-                if "loot_found" in st.session_state:
-                    del st.session_state.loot_found
-                del st.session_state.mob
-                if "xp_gained" in st.session_state:
-                    del st.session_state.xp_gained
-                if "greed_bonus" in st.session_state:
-                    del st.session_state.greed_bonus
+                clear_combat_state()
                 st.session_state.screen = dungeon["reward_screen"]
                 st.rerun()
         else:
             if st.button("Continue"):
                 st.session_state.floor += 1
-                st.session_state.combat_log = []
-                if "level_message" in st.session_state:
-                    del st.session_state.level_message
-                if "gold_found" in st.session_state:
-                    del st.session_state.gold_found
-                if "loot_found" in st.session_state:
-                    del st.session_state.loot_found
-                del st.session_state.mob
-                if "xp_gained" in st.session_state:
-                    del st.session_state.xp_gained
-                if "greed_bonus" in st.session_state:
-                    del st.session_state.greed_bonus
+                clear_combat_state()
                 st.rerun()
             
         if st.button("Return to Town"):
-            st.session_state.combat_log = []
-            if "level_message" in st.session_state:
-                del st.session_state.level_message
-            if "gold_found" in st.session_state:
-                del st.session_state.gold_found
-            if "loot_found" in st.session_state:
-                del st.session_state.loot_found
-            del st.session_state.mob
-            if "xp_gained" in st.session_state:
-                del st.session_state.xp_gained
-            if "greed_bonus" in st.session_state:
-                del st.session_state.greed_bonus
-            if "current_dungeon" in st.session_state:
-                del st.session_state.current_dungeon
+            clear_combat_state()
             st.session_state.floor = 1
             st.session_state.screen = "town"
             st.rerun()
@@ -935,7 +901,6 @@ elif st.session_state.screen == "dungeon":
             st.write(
                 f"{dungeon['name']} Clears: {player.dungeon_progress[dungeon['clear_key']]}")
         if st.button("Game Over"):
-            st.session_state.combat_log = []
             hero_record = {
                 "name": player.name,
                 "class": player.player_class,
@@ -947,16 +912,7 @@ elif st.session_state.screen == "dungeon":
                 }
             st.session_state.legacy_data["hall_of_heroes"].append(hero_record)
             del st.session_state.player_character
-            if "mob" in st.session_state:
-                del st.session_state.mob
-            if "level_message" in st.session_state:
-                del st.session_state.level_message
-            if "gold_found" in st.session_state:
-                del st.session_state.gold_found
-            if "loot_found" in st.session_state:
-                del st.session_state.loot_found
-            if "xp_gained" in st.session_state:
-                del st.session_state.xp_gained
+            clear_combat_state()
             if "current_dungeon" in st.session_state:
                 del st.session_state.current_dungeon
             st.session_state.floor = 1
@@ -976,7 +932,7 @@ elif st.session_state.screen == "event":
         if st.button("Continue"):
             del st.session_state.current_event
             del st.session_state.event_result
-            st.session_state.mob = dungeon["mob_spawner"](st.session_state.floor)
+            st.session_state.mob = Spawn_Mob(dungeon['monster_table'], st.session_state.floor)
             st.session_state.screen = "dungeon"
             st.rerun()
     else:

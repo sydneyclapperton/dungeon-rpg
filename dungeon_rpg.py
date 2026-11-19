@@ -488,8 +488,8 @@ bosses = [
     ("Storm Elemental", 50, 3, 8, 10, "Elemental", "Static Charge", static_charge, 2)
   ]
 
-def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
-  monster = random.choice(monsters)
+def Spawn_Mob(monster_table, difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
+  monster = random.choice(monster_table)
   mob = Mob(monster[0],
       monster[1] + (difficulty-1) * 4,
       monster[2] + (difficulty-1),
@@ -517,8 +517,8 @@ def Spawn_Mob(difficulty):    #name, hp, min_damage, max_damage, xp_reward, mob_
       mob.xp_reward *= 2
   return mob
 
-def Spawn_Boss(difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
-  boss = random.choice(bosses)
+def Spawn_Boss(boss_table, difficulty):   #name, hp, min_damage, max_damage, xp_reward, mob_type, ability_name=None, ability_effect = None, cooldown=0
+  boss = random.choice(boss_table)
   return Mob(boss[0],
       boss[1] + (difficulty-1) * 5,
       boss[2] + (difficulty-1) ,
@@ -553,47 +553,6 @@ frost_bosses = [
     ("Storm of Winter", 40, 5, 25, 10, "Elemental", "Eye of the Storm", static_charge, 2)
   ]
 
-def Spawn_Frost_Mob(difficulty):
-    monster = random.choice(frost_monsters)
-    mob = Mob(monster[0],
-        monster[1] + (difficulty-1) * 4,
-        monster[2] + (difficulty-1),
-        monster[3] + (difficulty-1) * 2,
-        monster[4] + (difficulty-1),
-        monster[5])
-    mob.is_elite = False
-    if random.random() < 0.12:
-      trait_name = random.choice(list(TRAITS.keys()))
-      trait = TRAITS[trait_name]
-      mob.trait = trait_name
-      mob.name = f"{trait_name} {mob.name}"
-      mob.max_hp = int(mob.max_hp * trait["hp_mult"])
-      mob.hp = mob.max_hp
-      mob.min_damage = int(mob.min_damage * trait["damage_mult"])
-      mob.max_damage = int(mob.max_damage * trait["damage_mult"])
-      mob.gold_mult = trait["gold_mult"]
-    if random.random() < 0.1:
-        mob.is_elite = True
-        mob.name = f"Elite {mob.name}"
-        mob.max_hp *= 2
-        mob.hp = mob.max_hp
-        mob.min_damage += difficulty // 2
-        mob.max_damage += difficulty
-        mob.xp_reward *= 2
-    return mob
-
-def Spawn_Frost_Boss(difficulty):
-    boss = random.choice(frost_bosses)
-    return Mob(boss[0],
-        boss[1] + (difficulty-1) * 5,
-        boss[2] + (difficulty-1) ,
-        boss[3] + (difficulty-1) * 2,
-        boss[4] + (difficulty-1),
-        boss[5],
-        boss[6],
-        boss[7],
-        boss[8])
-
 def frost_nova(damage,mob):
   mob.min_damage += 5
   mob.max_damage += 10
@@ -614,45 +573,6 @@ crypt_bosses = [
     ("Bone Colossus", 90, 8, 12, 20, "Undead", "Bone Crush", lambda x, mob: x + 25, 5)
   ]
 
-def Spawn_Crypt_Mob(difficulty):
-    monster = random.choice(crypt_monsters)
-    mob = Mob(monster[0],
-        monster[1] + (difficulty-1) * 4,
-        monster[2] + (difficulty-1),
-        monster[3] + (difficulty-1) * 2,
-        monster[4] + (difficulty-1),
-        monster[5])
-    mob.is_elite = False
-    if random.random() < 0.12:
-      trait_name = random.choice(list(TRAITS.keys()))
-      trait = TRAITS[trait_name]
-      mob.trait = trait_name
-      mob.name = f"{trait_name} {mob.name}"
-      mob.max_hp = int(mob.max_hp * trait["hp_mult"])
-      mob.hp = mob.max_hp
-      mob.min_damage = int(mob.min_damage * trait["damage_mult"])
-      mob.max_damage = int(mob.max_damage * trait["damage_mult"])
-      mob.gold_mult = trait["gold_mult"]
-    if random.random() < 0.1:
-        mob.is_elite = True
-        mob.name = f"Elite {mob.name}"
-        mob.max_hp *= 2
-        mob.hp = mob.max_hp
-        mob.min_damage += difficulty // 2
-        mob.max_damage += difficulty
-        mob.xp_reward *= 2
-    return mob
-def Spawn_Crypt_Boss(difficulty):
-    boss = random.choice(crypt_bosses)
-    return Mob(boss[0],
-        boss[1] + (difficulty-1) * 5,
-        boss[2] + (difficulty-1) ,
-        boss[3] + (difficulty-1) * 2,
-        boss[4] + (difficulty-1),
-        boss[5],
-        boss[6],
-        boss[7],
-        boss[8])
 def Spawn_Bone_Tyrant():
   return Mob("The Bone Tyrant", 1200, 30, 50, 500, "Undead Lord", "Death Bolt", lambda x, mob: x*3, 5)
 
@@ -819,8 +739,8 @@ DUNGEONS = {
     1: {
         "name": "The Ancient Depths",
         "max_floor": 50,
-        "mob_spawner": Spawn_Mob,
-        "boss_spawner": Spawn_Boss,
+        "monster_table": monsters,
+        "boss_table": bosses,
         "final_boss_spawner": Spawn_Final_Boss,
         "basic_loot_table": basic_loot_table,
         "elite_loot_table": elite_loot_table,
@@ -835,8 +755,8 @@ DUNGEONS = {
     2: {
         "name": "Frostbound Sanctum",
         "max_floor": 50,
-        "mob_spawner": Spawn_Frost_Mob,
-        "boss_spawner": Spawn_Frost_Boss,
+        "monster_table": frost_monsters,
+        "boss_table": frost_bosses,
         "final_boss_spawner": Spawn_Frostbinder,
         "basic_loot_table": basic_frost_loot_table,
         "elite_loot_table": elite_frost_loot_table,
@@ -851,8 +771,8 @@ DUNGEONS = {
     3: {
         "name": "The Crypt of the Damned",
         "max_floor": 50,
-        "mob_spawner": Spawn_Crypt_Mob,
-        "boss_spawner": Spawn_Crypt_Boss,
+        "monster_table": crypt_monsters,
+        "boss_table": crypt_bosses,
         "final_boss_spawner": Spawn_Bone_Tyrant,
         "basic_loot_table": basic_crypt_loot_table,
         "elite_loot_table": elite_crypt_loot_table,
