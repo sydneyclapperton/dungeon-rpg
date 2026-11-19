@@ -4,13 +4,13 @@ import random
 from dungeon_rpg import (CLASS_DATA, Character, handle_victory, save_game, load_game, get_item_by_name, shop_loot_table,
     get_unlocked_floors, create_enhanced_item, enemy_turn, DUNGEONS, Spawn_Boss, Spawn_Mob)
 from events import (trigger_event, treasure_event, healing_fountain_event, shrine_event, trap_event)
-from legacy import DEFAULT_LEGACY_DATA
+from legacy import DEFAULT_LEGACY_DATA, ACHIEVEMENTS, DUNGEON_CLEAR_ACHIEVEMENTS, has_achievement, unlock_achievement, check_general_achievements
 import quests 
 from environments import ENVIRONMENTS
 from copy import deepcopy
 
 st.title("Dungeon RPG")
-
+#Helpers
 def process_victory(player, mob, floor):
     player.skip_enemy_turn = False
     dungeon = DUNGEONS[st.session_state.current_dungeon]
@@ -25,6 +25,10 @@ def process_victory(player, mob, floor):
             st.session_state.level_message = (f"{player.name} reached level {player.level}! The Trainer has been permanently unlocked.")
         else:
             st.session_state.level_message = (f"{player.name} reached level {player.level}!")
+    new_achievements = check_general_achievements(player, st.session_state.legacy_data)
+    if new_achievements:
+        st.session_state.new_achievements = st.session_state.get("new_achievements", []) + new_achievements
+
 def clear_combat_state():
     st.session_state.combat_log = []
     for key in [
@@ -37,7 +41,13 @@ def clear_combat_state():
     ]:
         if key in st.session_state:
             del st.session_state[key]
-
+@st.dialog("🏆 Achievements")
+def achievement_dialog():
+    for achievement_id, achievement in ACHIEVEMENTS.items():
+        unlocked = has_achievement(st.session_state.legacy_data, achievement_id)
+        icon = "✅" if unlocked else "🔒"
+        st.markdown(f"**{icon} {achievement['name']}**  \n{achievement['description']}")
+        
 if "screen" not in st.session_state:
     st.session_state.screen = "char_creation"
 if "legacy_data" not in st.session_state:
@@ -66,9 +76,18 @@ if "player_character" in st.session_state:
                     st.write(f"{slot}: {item_name}")
             else:
                 st.write(f"{slot}: None")
-                
+        if st.button("🏆 Achievements"):
+            achievement_dialog()       
 if "combat_log" not in st.session_state:
     st.session_state.combat_log = []
+
+if "new_achievements" in st.session_state:
+    for achievement in st.session_state.new_achievements:
+        st.toast(
+            f"🏆 Achievement Unlocked: {achievement}"
+        )
+    del st.session_state.new_achievements
+
 if st.session_state.screen == "char_creation":
     player_name = st.text_input("Enter your character's name")
 
@@ -143,6 +162,8 @@ if st.session_state.screen == "char_creation":
             player.dungeon_progress.setdefault(f"dungeon_{dungeon_id}_clears",0)
             player.dungeon_progress.setdefault(f"dungeon_{dungeon_id}_highest_floor",1)
         st.session_state.legacy_data = save_data.get("legacy_data", deepcopy(DEFAULT_LEGACY_DATA))
+        for key, value in DEFAULT_LEGACY_DATA.items():
+            st.session_state.legacy_data.setdefault(key, value)
         # Migrate old saves to legacy unlock system
         if player.dungeon_progress.get("dungeon_1_clears", 0) > 0:
             st.session_state.legacy_data["highest_unlocked_dungeon"] = max(
@@ -270,6 +291,8 @@ elif st.session_state.screen == "retired":
             "fate": "Retired"
             }
         st.session_state.legacy_data["hall_of_heroes"].append(hero_record)
+        if unlock_achievement(st.session_state.legacy_data, "first_retirement"):
+            st.session_state.new_achievements = (st.session_state.get("new_achievements", [])+ [ACHIEVEMENTS["first_retirement"]["name"]])
         del st.session_state.player_character
         clear_combat_state()
         st.session_state.continue_lineage = True
@@ -883,42 +906,48 @@ elif st.session_state.screen == "dungeon":
             st.rerun()
     
     else:
-        st.error("You died!")
-        stats = player.run_stats
-        st.header("Life Summary")
-        st.write(f"Level: {player.level}")
-        st.write(f"Monsters Defeated: {stats['kills']}")
-        st.write(f"Elite Monsters Defeated: {stats['elite_kills']}")
-        st.write(f"Bosses Defeated: {stats['boss_kills']}")
-        st.write(f"XP Earned: {stats['xp_earned']}")
-        st.write(f"Gold Earned: {stats['gold_earned']}")
-        st.write(f"Items Found: {stats['items_found']}")
-        st.subheader("Dungeon Progress")
-        st.write(f"Total Dungeon Clears: {stats['total_dungeon_clears']}")
-        for dungeon_id, dungeon in DUNGEONS.items():
-            st.write(
-                f"{dungeon['name']} Highest Floor: {player.dungeon_progress[dungeon['highest_floor_key']]}")
-            st.write(
-                f"{dungeon['name']} Clears: {player.dungeon_progress[dungeon['clear_key']]}")
-        if st.button("Game Over"):
-            hero_record = {
-                "name": player.name,
-                "class": player.player_class,
-                "level": player.level,
-                "kills": player.run_stats["kills"],
-                "boss_kills": player.run_stats["boss_kills"],
-                "dungeon_clears": player.run_stats["total_dungeon_clears"],
-                "fate": f"Slain in {DUNGEONS[st.session_state.current_dungeon]['name']} on Floor {st.session_state.floor}"
-                }
-            st.session_state.legacy_data["hall_of_heroes"].append(hero_record)
-            del st.session_state.player_character
-            clear_combat_state()
-            if "current_dungeon" in st.session_state:
-                del st.session_state.current_dungeon
-            st.session_state.floor = 1
-            st.session_state.continue_lineage = True
-            st.session_state.screen = "char_creation"
-            st.rerun()
+        st.session_state.screen = "game_over"
+        st.rerun()
+elif st.session_state.screen == "game_over":
+    st.header("Game Over")
+    st.error("You died!")
+    stats = player.run_stats
+    st.header("Life Summary")
+    st.write(f"Level: {player.level}")
+    st.write(f"Monsters Defeated: {stats['kills']}")
+    st.write(f"Elite Monsters Defeated: {stats['elite_kills']}")
+    st.write(f"Bosses Defeated: {stats['boss_kills']}")
+    st.write(f"XP Earned: {stats['xp_earned']}")
+    st.write(f"Gold Earned: {stats['gold_earned']}")
+    st.write(f"Items Found: {stats['items_found']}")
+    st.subheader("Dungeon Progress")
+    st.write(f"Total Dungeon Clears: {stats['total_dungeon_clears']}")
+    for dungeon_id, dungeon in DUNGEONS.items():
+        st.write(
+            f"{dungeon['name']} Highest Floor: {player.dungeon_progress[dungeon['highest_floor_key']]}")
+        st.write(
+            f"{dungeon['name']} Clears: {player.dungeon_progress[dungeon['clear_key']]}")
+    if st.button("Game Over"):
+        hero_record = {
+            "name": player.name,
+            "class": player.player_class,
+            "level": player.level,
+            "kills": player.run_stats["kills"],
+            "boss_kills": player.run_stats["boss_kills"],
+            "dungeon_clears": player.run_stats["total_dungeon_clears"],
+            "fate": f"Slain in {DUNGEONS[st.session_state.current_dungeon]['name']} on Floor {st.session_state.floor}"
+            }
+        st.session_state.legacy_data["hall_of_heroes"].append(hero_record)
+        if unlock_achievement(st.session_state.legacy_data, "first_death"):
+            st.session_state.new_achievements = (st.session_state.get("new_achievements", []) + [ACHIEVEMENTS["first_death"]["name"]])
+        del st.session_state.player_character
+        clear_combat_state()
+        if "current_dungeon" in st.session_state:
+            del st.session_state.current_dungeon
+        st.session_state.floor = 1
+        st.session_state.continue_lineage = True
+        st.session_state.screen = "char_creation"
+        st.rerun()
 
 elif st.session_state.screen == "event":
     event = st.session_state.current_event
@@ -969,5 +998,9 @@ elif st.session_state.screen == "final_reward":
                 st.session_state.legacy_data["highest_unlocked_dungeon"],
                 st.session_state.current_dungeon + 1
                 )
+            achievement_id = DUNGEON_CLEAR_ACHIEVEMENTS.get(st.session_state.current_dungeon)
+            if achievement_id:
+                if unlock_achievement(st.session_state.legacy_data, achievement_id):
+                    st.session_state.new_achievements = (st.session_state.get("new_achievements", []) + [ACHIEVEMENTS[achievement_id]["name"]])
             st.session_state.screen = "town"
             st.rerun()      
